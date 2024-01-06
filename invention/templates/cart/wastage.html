@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block base %}
+<style>
+  #waste {
+    margin-top: 75px;
+  }
+  .form-card {
+    background-color: #f8f9fa;
+    border-radius: 15px;
+    padding: 30px;
+  }
+  .custom-label {
+    font-weight: bold;
+  }
+</style>
+
+
+<div class="p-4" id="waste">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="form-card shadow p-4 mb-4">
+          <h1 class="text-center mb-4">Wastage Form</h1>
+          <form method="POST" id="wastageForm">
+            {% csrf_token %}
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="product-name" class="form-label custom-label">Product Name</label>
+                  <input type="text" class="form-control" id="product-name" name="product_name" value="{{ item.product.name }}" readonly>
+                </div>
+                <div class="mb-3">
+                  <label for="category" class="form-label custom-label">Category</label>
+                  <input type="text" class="form-control" id="category" name="category" value="{{ item.product.category }}" readonly>
+                </div>
+                <div class="mb-3">
+                  <label for="actual-quantity" class="form-label custom-label">Actual Quantity</label>
+                  <p>{{ item.product.actual_count }}</p>
+                </div>
+                <div class="mb-3">
+                  <label for="taken-quantity" class="form-label custom-label">Taken Quantity</label>
+                  <p>{{ item.quantity }}</p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="taken-date" class="form-label custom-label">Taken Date</label>
+                  <p>{{ item.created_at }}</p>
+                </div>
+                <div class="mb-3">
+                  <label for="damaged-quantity" class="form-label custom-label">Damaged Quantity</label>
+                  <input type="number" min="0" value="0" class="form-control" name="damaged_qty" required>
+                </div>
+                <div class="mb-3">
+                  <label for="reason" class="form-label custom-label">Reason</label>
+                  <input type="text" class="form-control" id="damaged-quantity" name="reason" required>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3" onclick="return confirmSubmitCart()">Submit</button>
+              </div>
+            </div>
+          </form>
+          <div class="message mt-4">
+            {% for message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  function confirmSubmitCart() {
+    const confirmation = confirm("It's okay to submit");
+    if (confirmation) {
+      document.getElementById('productForm').submit();
+    } else {
+      return false;
+    }
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const damagedQuantity = parseInt(document.querySelector('input[name="damaged_qty"]').value);
+      const takenQuantity = parseInt('{{ item.quantity }}'); 
+
+      if (damagedQuantity <= 0) {
+        alert('OOPS!! Quantity should not be Zero.');
+        return;
+      }
+
+      if (damagedQuantity > takenQuantity) {
+        alert('Enter the correct quantity.');
+        return;
+      }
+
+      form.submit();
+    });
+  });
+</script>
+{% endblock %}

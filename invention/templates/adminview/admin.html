@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block base %}
+
+<div class="container mt-5">
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Wastage</h5>
+                    <p class="card-text text-center">Manage Wastage</p>
+                    <a href="{% url 'wastage_render' %}" class="btn btn-primary d-block mx-auto">Go to Wastage</a>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Add Products</h5>
+                    <p class="card-text text-center">Add New Products</p>
+                    <a href="{% url 'Add_product' %}" class="btn btn-primary d-block mx-auto">Add Products</a>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Category</h5>
+                    <p class="card-text text-center">Add New Category</p>
+                    <a href="{% url 'Add_category' %}" class="btn btn-primary d-block mx-auto">Add Catgories</a>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+          <div class="card">
+              <div class="card-body">
+                  <h5 class="card-title text-center">Sub Category</h5>
+                  <p class="card-text text-center">Add Sub Category</p>
+                  <a href="{% url 'Add_subcategory' %}" class="btn btn-primary d-block mx-auto">Add Sub Catgories</a>
+              </div>
+          </div>
+      </div>
+    
+        {% for group in request.user.groups.all %}
+            {% if group.name == 'superadmin' %}
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title text-center">Super Admin</h5>
+                        <p class="card-text text-center">Admin List</p>
+                        <a href="{% url 'users_list' %}" class="btn btn-primary d-block mx-auto">Add Admin</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <div class="col">
+            <h2 class="card-title text-center">ALL LOGS DETAIL</h2>
+            </div>
+        </div>
+    </div>
+    
+        <div class="container p-4 shadow mb-5 mt-2" id="search">
+            <input type="text" id="rollNumberInput" class="form-control" placeholder="Enter Roll Number">
+          </div>
+          
+
+    
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Roll Number</th>
+                            <th>Product Name</th>
+                            <th>Quantity</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for take in purchased_items reversed %}
+                        <tr>
+                            <td>{{take.user}}</td>
+                            <td>{{take.product.name}}</td>
+                            <td>{{take.quantity}}</td>
+                            <td>{{take.date_added}}</td>
+                            <td>
+                                {% if take.status == 'checked_out' %}
+                                <span class="badge bg-danger">Checked out</span>
+                                {% else %}
+                                <span class="badge bg-success">Checked In</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tbody>
+                        {% for take in checked_out %}
+                        <tr>
+                            <td>{{take.user}}</td>
+                            <td>{{take.product.name}}</td>
+                            <td>{{take.quantity}}</td>
+                            <td>{{take.created_at}}</td>
+                            <td>
+                                {% if take.status == 'checked_out' %}
+                                <span class="badge bg-danger">Checked out</span>
+                                {% else %}
+                                <span class="badge bg-success">Checked In</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="mb-5 mt-5">
+    .
+</div>
+<script>
+    function filterData() {
+        let rollNumber = document.getElementById('rollNumberInput').value.toLowerCase();
+        let rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            let rollNumCell = row.cells[0].textContent.toLowerCase();
+            let rollMatch = rollNumCell.includes(rollNumber);
+            if (rollMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    document.getElementById('rollNumberInput').addEventListener('input', filterData);
+</script>
+{% endblock %}

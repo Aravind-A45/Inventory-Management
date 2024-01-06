@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block base %}
+<div class="container-fluid bg-image" style="background-image: url('your-background-image.jpg');">
+    <div class="overlay"></div>
+    <h1 class="text-center text-orange mt-5 mb-4">Wastage Form</h1>
+    <div class="row justify-content-center">
+        {% for i in wastage reversed %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ i.user }}</h5>
+                    <p class="card-subtitle my-2">Product Name: <span class="h6">{{ i.product_name.name }}</span></p>
+                    <p class="card-text">Category: {{ i.category.name }}</p>
+                    <p class="card-text">Quantity: {{ i.quantity }}</p>
+                    <p class="card-text">Reason: {{ i.reason }}</p>
+                    <p class="card-text">Created At: {{ i.created_at }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .bg-image {
+        background-size: cover;
+        background-position: center;
+        min-height: 100vh;
+        position: relative;
+    }
+    
+    .overlay {
+        background-color: rgba(0, 0, 0, 0);
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+</style>
+{% endblock %}

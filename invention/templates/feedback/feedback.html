@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <form method="post">
+    {% csrf_token %}
+    <h1>PRODUCT FORM</h1>
+    <table>
+      <tr>
+        <td>
+          pname :
+        </td>
+        <td>
+          <input type="text" name="pname">
+        </td>
+      </tr>
+      <tr>
+        <td>
+          return_date :
+        </td>
+        <td>
+          <input type="text" name="return_date">
+        </td>
+      </tr>
+      <tr>
+        <td>
+          minute :
+        </td>
+        <td>
+          <input type="number" name="minute">
+        </td>
+      </tr>
+      <tr>
+        <td>
+          hour :
+        </td>
+        <td>
+          <input type="number" name="hour">
+        </td>
+      </tr>
+      <tr>
+        <td>
+          day_of_week :
+        </td>
+        <td>
+          <input type="text" name="day_of_week">
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <input type="submit" value="submit" name="submit">
+        </td>
+      </tr>    
+    </table>
+  </form>
+</body>
+</html>

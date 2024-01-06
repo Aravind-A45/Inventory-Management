@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block base %}
+<head>
+  <script>
+    function confirmSubmitItem(itemId) {
+      const confirmation = confirm("Are you sure you want to comfort with this category name!...");
+      if (confirmation) {
+        document.getElementById(`removeItem_${itemId}`).submit();
+      } else {
+        return false;
+      }
+    }
+  </script>
+</head>
+<div class="container-fluid bg-image">
+  <div class="overlay"></div>
+  <h1 class="text-center text-orange mt-5 mb-4">Edit Category Form</h1>
+  <div class="row justify-content-center">
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card">
+        <form method="post">
+          {% csrf_token %}
+          <div class="card-body">
+            <div class="form-group">
+              <label for="categoryName" class="mb-1">Category Name</label>
+              <input type="text" class="form-control mt-1" id="categoryName" value="{{category.name}}" name="new_category_name" required>
+            </div>
+            <button class="btn btn-primary btn-block mt-3" type="submit" onclick="return confirmSubmitItem('{{ category.id }}')">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+.bg-image {
+  background-image: url('your-background-image.jpg');
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+  position: relative;
+}
+
+.overlay {
+  background-color: rgba(0, 0, 0, 0); /* Adjust opacity for better readability */
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1; /* Ensures the content is above the overlay */
+}
+</style>
+{% endblock %}

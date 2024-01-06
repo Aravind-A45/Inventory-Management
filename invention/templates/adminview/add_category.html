@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% block base %}
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+    <title>Document</title>
+    <style>
+        #image{
+            position:relative;
+            top:80px;
+        }
+    </style>
+    <script>
+        function checkCategory() {
+
+            var categoryName = document.getElementById('exampleInputEmail1').value;
+  
+            var existingCategories = [{% for category in categories %}"{{ category.name }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    
+
+            if (existingCategories.includes(categoryName)) {
+                alert('Category already exists!');
+                return false;
+            }
+            return true;
+        }
+
+        function confirmRemoveItem(itemId) {
+            const confirmation = confirm("Are you sure you want to remove the category ?");
+            if (confirmation) {
+              document.getElementById(`removeItem_${itemId}`).submit();
+            } else {
+              return false;
+            }
+          }
+
+        function confirmSubmitItem(itemId) {
+            const confirmation = confirm("Are you sure you want to edit this category ?");
+            if (confirmation) {
+              document.getElementById(`removeItem_${itemId}`).submit();
+            } else {
+              return false;
+            }
+          }
+    </script>
+<head>
+<body>
+    <div class="container mb-1 mt-5" style="display:flex;justify-content:center;align-items:center">
+    <div class="col-md-12">
+        <div class="row g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm h-md-250 position-relative">
+            <div class="col-md-6 d-none d-lg-block d-md-block justify-content-center" id="image">
+                <img src="{% static 'images\10yearslogo_1-1-1_page-0001-removebg-preview.png' %}" alt="">
+            </div>
+          <div class="col p-4 d-flex flex-column position-static" >
+            <form method="POST" onsubmit="return checkCategory()">
+                {% csrf_token %}
+                <center><h1 style="font-style:Serif" class="mb-5">ADD CATEGORY </h1></center>
+                <div class="mb-3">
+                    <label for="exampleInputEmail1" class="form-label">Category Name</label>
+                    <input type="text" class="form-control" id="exampleInputEmail1" name="name" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+          </div> 
+        </div>
+    </div>
+    </div>
+
+    <div class="container mb-4 mt-2" id="productsContainer">
+        <div class="row row-cols-1 row-cols-md-4 g-4" id="productList">
+          {% for category in categories reversed %}
+          <div class="col product-card">
+            <div class="card shadow">
+              <div class="card-body">
+                <h5 class="card-title">{{ category.name }}</h5>
+                <a href="{% url 'edit_category' category.id %}"><button class="mt-2 btn btn-outline-primary" onclick="return confirmSubmitItem('{{ category.id }}')">Edit</button></a> <a href="{% url 'delete_category' category.id %}"><button class="btn btn-outline-info mt-2" onclick="return confirmRemoveItem('{{ category.id }}')">Remove</button></a>
+                </div>
+              </div>
+            </div>
+            {% empty %}
+            <p>Not yet added</p>
+          {% endfor %}
+          </div>
+      
+        </div>
+      </div>
+      <div class="mb-5 mt-5">
+        .
+      </div>
+</body>
+
+{% endblock %}

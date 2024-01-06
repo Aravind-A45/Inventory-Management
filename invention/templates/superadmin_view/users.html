@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block base %}
+<div class="container">
+    <h1 class="text-center mb-4">Inventory Users List</h1>
+    <div class="row justify-content-center my-5">
+        <div class="col-md-10">
+            <form name="myForm" onsubmit="return validateEmail()" method="post" id="call">
+                {% csrf_token %}
+                <input type="text" id="email" name="email" placeholder="admin@kct.ac.in" pattern="[a-zA-Z0-9_.+-]+@kct\.ac\.in" required>
+                <button type="submit">Submit</button>
+                <p id="result"></p>
+            </form>
+            
+
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+            <br>
+
+                {% for user in admins %}
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ user.mail }}</h5>
+                            <p class="card-text">
+                                {% for i in users%}
+                                {% if i.email == user.mail %}
+                                {% for group in i.groups.all %}
+                                    <span class="badge bg-primary">{{group.name}}</span>
+                                {% endfor %}
+                                {% endif %}
+                                {% endfor %}
+                            </p>
+                            <div class="row">
+                                <div class="col">
+                                    <a href="{% url 'remove_role' user_id=user.id %}" class="btn btn-danger"> Remove Admin Role</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %} 
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function validateEmail() {
+        const enteredEmail = document.getElementById('email').value;
+        const microsoftPattern = /^[a-zA-Z0-9_.+-]+@(kct\.)+ac\.in$/; // Your Microsoft email pattern
+
+        if (microsoftPattern.test(enteredEmail)) {
+            const confirmation = confirm('Do you want to add this Microsoft email?');
+
+            if (confirmation) {
+                // Proceed to form submission
+                document.forms['myForm'].submit();
+            } else {
+                // Cancel the form submission
+                return false;
+            }
+        } else {
+            alert('Please enter a valid Microsoft email.');
+            return false;
+        }
+    }
+</script>
+{% endblock %}

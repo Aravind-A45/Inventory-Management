@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block base %}
+<body class="bg-gray-100">
+  <div class="container py-4">
+    <h1 class="text-center text-orange mb-4">Return Form</h1>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+      {% for item in purchased_items %}
+      <div class="col">
+        <div class="card shadow">
+          <div class="card-body">
+            <h2 class="fw-bold">Checked In:</h2>
+            <p>Product Name: {{ item.product.name }}</p>
+            <p>Product Quantity: {{ item.quantity }}</p>
+            <p>Category: {{ item.product.category }}</p>
+            <p>Date & Time: {{ item.created_at}}</p>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              {% if item.quantity != 1 %}
+              <form action="{% url 'return' item.pk %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary me-2">Return</button>
+              </form>
+              {% endif %}
+              <form action="{% url 'return_all' item.id %}" method="get">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Return All</button>
+              </form>
+              <form action="{% url 'Add_wastage' item.id %}" >
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Damaged</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col">
+        <div class="card shadow">
+          <div class="card-body">
+            <p class="text-center">No Returns Yet</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="mb-5 mt-5">
+    .
+  </div>
+</body>
+{% endblock %}

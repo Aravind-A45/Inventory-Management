@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block base %}
+
+<div class="container p-4 shadow mb-5 mt-5" id="search">
+  <input type="text" id="searchInput" class="form-control" placeholder="Search for a product...">
+</div>
+
+<div class="container my-4" id="productsContainer">
+  <div class="row row-cols-1 row-cols-md-4 g-4" id="productList">
+    {% for product in products reversed %}
+    <div class="col product-card">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title">{{ product.name }}</h5>
+          <p class="card-text">Actual Quantity: {{ product.actual_count }}</p>
+          <p class="card-text">Available Quantity: {{ product.available_count }}</p>
+          <p class="card-text">Category: {{ product.category }}</p>
+          <p class="card-text"><b>Description:</b><br>{{ product.decription }}</p>
+          <a href="{% url 'delete_product' product.id %}"><button class="btn btn-outline-primary"  onclick="return confirmRemoveItem('{{product.id }}')">Remove</button></a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <p>Not yet added</p>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const productCards = document.querySelectorAll('.product-card');
+
+    productCards.forEach(card => {
+      const productName = card.querySelector('.card-title').textContent.toLowerCase();
+      if (productName.includes(searchTerm)) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  });
+
+  function confirmRemoveItem(itemId) {
+    const confirmation = confirm("Are you sure you want to remove this item from the Product List ?");
+    if (confirmation) {
+      document.getElementById(`removeItem_${itemId}`).submit();
+    } else {
+      return false;
+    }
+  }
+</script>
+{% endblock %}

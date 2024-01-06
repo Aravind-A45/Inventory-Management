@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block base %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <style>
+    /* Your existing custom styles */
+  </style>
+  <script>
+    function confirmRemoveItem(itemId) {
+      const confirmation = confirm("Are you sure you want to remove this item from the cart?");
+      if (confirmation) {
+        document.getElementById(`removeItem_${itemId}`).submit();
+      } else {
+        return false;
+      }
+    }
+  
+    function confirmSubmitCart() {
+      const confirmation = confirm("It's okay to submit the cart with these items?");
+      if (confirmation) {
+        document.getElementById('submitCartForm');
+      } else {
+        return false;
+      }
+    }
+  </script>
+</head>
+<body>
+  <section class="vh-100 d-flex align-items-center">
+    <div class="container py-5">
+      <div class="card shadow-lg border-radius-15">
+        <div class="card-body">
+          <div class="mb-4">
+            <h1 class="fw-bold mb-0">Cart</h1>
+          </div>
+          <hr class="my-4">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Image</th>
+                  <th>Product Name</th>
+                  <th>Quantity</th>
+                  <th>Category</th>
+                  <th>Remove Item</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in cart_items %}
+                <tr>
+                  <td><img src="{{item.product_name.image.url}}" alt="{{ item.product_name.name }}" class="img-fluid shadow-sm border border-black" height="150" width="200"></td>
+                  <td>{{ item.product_name.name }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>{{ item.product_name.category }}</td>
+
+                  <td>
+                    <form action="{% url 'remove_from_cart' product_id=item.id %}" method="post" id="removeItem_{{ item.id }}">
+                      {% csrf_token %}
+                      <button type="button" class="btn btn-danger btn-sm" onclick="return confirmRemoveItem('{{ item.id }}')">Remove</button>
+                    </form>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="5"><p>No items</p></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <hr class="my-4">  
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <a href="{% url 'Home' %}" class="btn btn-secondary"><i class="fas fa-long-arrow-alt-left me-2"></i>Back to Home</a>
+            </div>
+            <div class="col-md-6 text-end">
+              <form id="submitCartForm" action="{% url 'submit_cart' %}" method="post">
+                {% csrf_token %}
+                <div>
+                  <label>Due Date :</label>
+                  <input type="date" name="due_date" id="id_due_date" required>
+                </div>
+                
+                <br>
+                <!-- <input type="button" value="Submit Cart" class="btn btn-primary" onclick="return confirmSubmitCart()"> -->
+                <button type="submit" class="btn btn-primary" value="Submit Cart" onclick="return confirmSubmitCart()">Submit Cart</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+      var today = new Date().toISOString().split('T')[0];
+      var oneMonthLater = new Date();
+      oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+      var maxDate = oneMonthLater.toISOString().split('T')[0];
+      document.getElementById('id_due_date').min = today;
+      document.getElementById('id_due_date').max = maxDate;
+  });
+</script>
+{% endblock %}

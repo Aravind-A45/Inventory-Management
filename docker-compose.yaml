@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+  web:
+    container_name: inventory_web
+    restart: always
+    build: .
+    ports:
+      - "6541:8000"
+    expose:
+      - "8000"
+    links:
+      - redis
+    command: sh '/inventory/run_web.sh'
+  redis:
+    container_name: inventory_redis
+    restart: always
+    image: redis:latest
+    ports:
+      - "6543:6379"
+  worker:
+    container_name: inventory_worker
+    build: .
+    restart: always
+    command: sh '/inventory/run_celery.sh'
+    links:
+      - redis
