@@ -13,11 +13,17 @@
       <div class="card shadow">
         <div class="card-body">
           <h5 class="card-title">{{ product.name }}</h5>
-          <p class="card-text">Actual Quantity: {{ product.actual_count }}</p>
-          <p class="card-text">Available Quantity: {{ product.available_count }}</p>
-          <p class="card-text">Category: {{ product.category }}</p>
-          <p class="card-text"><b>Description:</b><br>{{ product.decription }}</p>
+          <p class="card-text">Actual Stock : {{ product.actual_count }}</p>
+          <p class="card-text">Available Stock : {{ product.available_count }}</p>
+          <p class="card-text">Category :  {{ product.category }}</p>
+          <p class="card-text">Unit Price : Rs.{{ product.unit_price}}</p>
+          <p class="card-text">Actual Total Amount : Rs.{{product.actual_price}}</p>
+          <p class="card-text">Available Amount : Rs.{{product.available_price}}</p>
+          <p class="card-text"><b>Description : </b><br>{{ product.decription }}</p>
           <a href="{% url 'delete_product' product.id %}"><button class="btn btn-outline-primary"  onclick="return confirmRemoveItem('{{product.id }}')">Remove</button></a>
+          <form action="{% url 'edit_product_view' product.id %}">
+         <button class="mt-1 btn btn-outline-primary">Edit</button>
+        </form>
         </div>
       </div>
     </div>

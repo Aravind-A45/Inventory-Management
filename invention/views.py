@@ -240,22 +240,6 @@ def submit_cart(request):
     return redirect("Home")
 
 
-#Optional-Cart-Quantity
-# def decrease_quantity(request, product_id):
-#     if product_id in temporary_cart:
-#         temporary_cart[product_id] -= 1
-#         if temporary_cart[product_id] == 0:
-#             del temporary_cart[product_id]
-#     return redirect('view_cart')
-
-
-# def increase_quantity(request, product_id):
-#     if product_id in temporary_cart:
-#         product = Product.objects.get(pk=product_id)
-#         if product.available_count > temporary_cart[product_id]:
-#             temporary_cart[product_id] += 1
-#     return redirect('view_cart')
-
 
 def update_quantity(request, product_id, quantity):
     product = get_object_or_404(Product, id=product_id)
@@ -345,9 +329,11 @@ class AddReturnView(View):
 class AddWastageView(View):
     def get(self, request, item_id):
         categories = Category.objects.all()
+       
         products = Log.objects.all()
         item = get_object_or_404(Log, id=item_id)
         cart=Cart.objects.filter(created_by=request.user)
+        print(item.product.name)
         count = cart.count()
         return render(
             request,
@@ -359,22 +345,24 @@ class AddWastageView(View):
         categories = Category.objects.all()
         products = Log.objects.all()
         item = get_object_or_404(Log, id=item_id)
-
+        products = Product.objects.all()
         damaged_quantity = request.POST.get("damaged_qty")
         reason = request.POST.get("reason")
 
         if damaged_quantity is not None and damaged_quantity.isdigit() and int(damaged_quantity) <= item.quantity and int(damaged_quantity) > 0:
             damaged_quantity = int(damaged_quantity)
             item.quantity -= damaged_quantity
-
-        
             item.save()
-
             Wastage.objects.create(user=request.user,product_name=item.product,quantity=damaged_quantity,reason=reason,category=item.product.category)
+            for product in products:
+              if item.product.name == product.name:
+                s = damaged_quantity * product.unit_price
+                product.available_price = product.available_price - s
+                product.save()
             if item.quantity == 0:
                 item.delete()
                 return redirect('return_form')
-        
+
             return redirect('return_form')
             
         else:
@@ -386,7 +374,6 @@ class AddWastageView(View):
             'cart/wastage.html',
             {'categories': categories, 'products': products, 'item': item, 'count':count,}
         )
-        
         
 #User-Groups
 
@@ -420,20 +407,6 @@ def remove_role(request, user_id):
     emails=AdminMail.objects.all()
     AdminMail.objects.filter(id=user_id).delete()
     return redirect('users_list')
-
-
-#Super-Admin-Apoint-Admin
-# @allowed_user(allowed_roles=['superadmin'])
-# def appoint_admin(request, user_id):
-#     if request.method == 'POST':
-#         user = get_object_or_404(User, id=user_id)
-#         admin_group = Group.objects.get(name='admin') 
-#         user.groups.add(admin_group)
-#         return redirect('users_list')
-#     else:
-#         pass
-#     return redirect(request, 'super_admin/users.html', {'user':user, } )
-
 
 #Log-For-Admin-SuperAdmin
 @login_required(login_url='login')
@@ -475,10 +448,14 @@ def add_product(request):
          cat=request.POST.get("category")
          category=Category.objects.get(name=cat)
          sub = request.POST.get('sub_category')
-         sub_category = SubCategory.objects.get(name_sub=sub)
+         sub_category = SubCategory.objects.get(name_sub=sub) 
+         unit_price = request.POST.get('unit_price')
+
+         a_price = int(unit_price) * int(available_count)
+         ac_price = int(unit_price) * int(actual_count)
          if int(actual_count) >= int(available_count):
             print("exec add product")
-            Product.objects.create(name=product_name,decription=decription,actual_count=actual_count,available_count=available_count,category=category,image=img, dummy_count = available_count,sub_category = sub_category)
+            Product.objects.create(name=product_name,decription=decription,actual_count=actual_count,available_count=available_count,category=category,image=img, dummy_count = available_count,sub_category = sub_category, unit_price = unit_price, actual_price=ac_price , available_price = a_price )
             sweetify.success(request, 'Look Up the Available Quantity',button="OK")
             return redirect("Add_product")
          else:
@@ -611,4 +588,57 @@ def edit_subcategory(request, subcategory_id):
     cart=Cart.objects.filter(created_by=request.user)
     count = cart.count()
     return render(request, 'adminview/edit_sub_category.html', {"category":category, 'count':count,})      
+
+def edit_product_view(request, product_id):     
+    product = Product.objects.get(id = product_id)
+    if request.method=="POST":
+         product_name=request.POST.get("name")
+         decription=request.POST.get("description") 
+         unit_price = request.POST.get('unit_price')
+         curr_qty = request.POST.get('curr_qty')
+         c_qty = int(curr_qty)
+         a_stock = c_qty + product.available_count
+         actual_stock = c_qty + product.actual_count
+
+         a_price = float(unit_price) * float(a_stock) 
+         ac_price = float(unit_price) * float(actual_stock)
+         print(c_qty)
+         print(a_stock)
+
+         par_unit_price = request.POST.get('par_curr_price') 
+         par_price = int(par_unit_price) * c_qty
+
+         actual_price = par_price + product.actual_price
+         available_price = par_price + product.available_price
+
+
+
+         if int(par_unit_price) != 0:
+          if(a_stock <= product.actual_count):
+                product.name = product_name
+                product.decription = decription
+                product.unit_price = unit_price
+                product.available_count = a_stock
+                product.available_price = a_price
+                product.actual_count = actual_stock
+                product.actual_price = ac_price
+                product.save()
+                return redirect('product')
+              
+         else: 
+            if(a_stock <= product.actual_count):
+                product.name = product_name
+                product.decription = decription
+                product.unit_price = unit_price
+                product.available_count = a_stock
+                product.available_price = available_price
+                product.actual_price = actual_price
+                product.actual_count = actual_stock
+                product.save()
+                return redirect('product') 
+
+    return render(request, 'adminview/edit_product.html', {'product':product})
+
+
+
 
