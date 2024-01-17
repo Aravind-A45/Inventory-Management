@@ -12,20 +12,23 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'inventory.settings')
 app = Celery('inventory')
 app.conf.enable_utc = False
 
-app.conf.update(timezone = 'Asia/Kolkata')
+app.conf.update(timezone='Asia/Kolkata')
 
 # Load task modules from all registered Django app configs.
 app.conf.beat_schedule = {
-    'send-mail-ever-day-at-8' :{
-        'task' : 'invention.tasks.send_notification_mail',
-        'schedule' : crontab(hour=21,minute=45),
+    'send-mail-every-day-at-8': {
+        'task': 'invention.tasks.send_notification_mail',
+        'schedule': crontab(hour=18, minute=17),
     },
-    'send-mail-ever-day-at-8' :{
-        'task' : 'invention.tasks.send_warning_mail',
-        'schedule' : crontab(hour=17,minute=36),
+    'send-mail-every-day-at-2': {
+        'task': 'invention.tasks.send_warning_mail',
+        'schedule': crontab(hour=18, minute=25),
+    },
+    'send-mail-every-day-at-3': {
+        'task': 'invention.tasks.send_stock_mail',
+        'schedule': crontab(hour=18, minute=24),
     }
 }
-
 
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
@@ -34,4 +37,4 @@ app.autodiscover_tasks()
 
 @app.task(bind=True)
 def debug_task(self):
-  print(f'Request: {self.request!r}')
+    print(f'Request: {self.request!r}')

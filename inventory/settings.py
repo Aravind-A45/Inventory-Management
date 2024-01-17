@@ -195,7 +195,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CELERY_BROKER_URL = 'redis://redis:6379/0' 
+CELERY_BROKER_URL = 'redis://localhost:6379/0' 
 # if IS_PRODUCTION else 'redis://127.0.0.1:6379'
 CELERY_ACCEPT_CONTENT = {'application/json'}
 CELERY_RESULT_SERIALIZER = 'json'
@@ -216,7 +216,7 @@ STATIC_ROOT = 'static/'
 
 MEDIA_URL = '/media/'
 
-MEDIA_ROOT = os.path.join(BASE_DIR / 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 SWEETIFY_SWEETALERT_LIBRARY = 'sweetalert2'
 

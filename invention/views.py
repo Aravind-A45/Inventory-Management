@@ -455,7 +455,7 @@ def add_product(request):
          ac_price = int(unit_price) * int(actual_count)
          if int(actual_count) >= int(available_count):
             print("exec add product")
-            Product.objects.create(name=product_name,decription=decription,actual_count=actual_count,available_count=available_count,category=category,image=img, dummy_count = available_count,sub_category = sub_category, unit_price = unit_price, actual_price=ac_price , available_price = a_price )
+            Product.objects.create(created_by=request.user,name=product_name,decription=decription,actual_count=actual_count,available_count=available_count,category=category,image=img, dummy_count = available_count,sub_category = sub_category, unit_price = unit_price, actual_price=ac_price , available_price = a_price )
             sweetify.success(request, 'Look Up the Available Quantity',button="OK")
             return redirect("Add_product")
          else:

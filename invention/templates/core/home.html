@@ -22,7 +22,8 @@
           <h5 class="card-title">{{ product.name }}</h5>
           <p class="card-text">Actual Quantity: {{ product.actual_count }}</p>
           <p class="card-text">Available Quantity: {{ product.available_count }}</p>
-          <p class="card-text">Category: {{ product.category }} -- {{product.sub_category.name_sub}} </p>
+          <p class="card-textss">Category: {{ product.category }}</p>
+          <p class="card-texts">Sub-Category: {{product.sub_category.name_sub}} </p>
           <a href="{% url 'Product_description' product.id %}" class="btn btn-outline-primary">View Detail</a>
           <form action="{% url 'add_to_cart' product.id %}" method="post" class="mt-3" onsubmit="return validateForm(this, {{ product.available_count }})" onsubmit="return validateForm(this, {{ product.dummy_count }})">
             {% csrf_token %}
@@ -48,16 +49,23 @@
   document.getElementById('searchInput').addEventListener('input', function() {
     const searchTerm = this.value.toLowerCase();
     const productCards = document.querySelectorAll('.product-card');
-
+  
     productCards.forEach(card => {
       const productName = card.querySelector('.card-title').textContent.toLowerCase();
-      if (productName.includes(searchTerm)) {
+      const categoryNameElement = card.querySelector('.card-textss');
+      const subcategoryNameElement = card.querySelector('.card-texts');
+
+      const categoryName = categoryNameElement ? categoryNameElement.textContent.toLowerCase() : '';
+      const subcategoryName = subcategoryNameElement ? subcategoryNameElement.textContent.toLowerCase() : '';
+
+      if (productName.includes(searchTerm) || categoryName.includes(searchTerm) || subcategoryName.includes(searchTerm)) {
         card.style.display = 'block';
       } else {
         card.style.display = 'none';
       }
     });
   });
+  
 
   function increment(button) {
     const inputField = button.parentNode.querySelector('input[type="number"]');

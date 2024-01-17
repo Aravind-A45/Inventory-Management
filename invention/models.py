@@ -19,6 +19,7 @@ class Product(models.Model):
     available_price = models.PositiveIntegerField()
     unit_price = models.FloatField()
     is_active = models.BooleanField(default = False)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.name)
