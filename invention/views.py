@@ -28,6 +28,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, APIView
 from django.db import transaction
 from django_ratelimit.decorators import ratelimit
+from django.conf import settings
+from tablib import Dataset
+from .resources import productResource
+import pandas as pd
 
 
 
@@ -439,31 +443,69 @@ def add_product(request):
    category=Category.objects.all()
    products = Product.objects.all()
    sub_category = SubCategory.objects.all()
-   if request.method=="POST" and request.FILES.get('image'):
-         product_name=request.POST.get("name")
-         decription=request.POST.get("description")
-         actual_count=request.POST.get("actual")
-         available_count=request.POST.get("avail")
-         img=request.FILES["image"]   
-         cat=request.POST.get("category")
-         category=Category.objects.get(name=cat)
-         sub = request.POST.get('sub_category')
-         sub_category = SubCategory.objects.get(name_sub=sub) 
-         unit_price = request.POST.get('unit_price')
+   if request.method=="POST":
+        if 'form1' in request.POST:
+            file = request.FILES['file']
+            if file.name.endswith('.xlsx'):
+                try:
+                    df = pd.read_excel(file, sheet_name="Sheet1")
+                    for index, row in df.iterrows():
+                            try:
+                                category, created = Category.objects.get_or_create(created_by=request.user,name = row['category'])
+                                sub_category,created = SubCategory.objects.get_or_create(category = category, name_sub= row['sub_category'], created_by = request.user)
 
-         a_price = int(unit_price) * int(available_count)
-         ac_price = int(unit_price) * int(actual_count)
-         if int(actual_count) >= int(available_count):
-            print("exec add product")
-            Product.objects.create(created_by=request.user,name=product_name,decription=decription,actual_count=actual_count,available_count=available_count,category=category,image=img, dummy_count = available_count,sub_category = sub_category, unit_price = unit_price, actual_price=ac_price , available_price = a_price )
-            sweetify.success(request, 'Look Up the Available Quantity',button="OK")
-            return redirect("Add_product")
-         else:
-             sweetify.warning(request, 'Product added successfully',button="OK")
-             return redirect("Add_product")
+                                product, created = Product.objects.update_or_create(
+                                    name = row['name'],
+                                    decription = row['description'],
+                                    actual_count = row['actual_count'],
+                                    available_count = row['available_count'],
+                                    unit_price = row['unit_price'],
+                                    category = category,
+                                    sub_category = sub_category,
+                                    created_by = request.user,
+                                    actual_price = row['unit_price'] * row['actual_count'],
+                                    available_price = row['unit_price'] * row['available_count'],
+                                )
+                                
+                                if not created:
+                                            messages.success(request, f'Updated {product}')
+
+                            except Exception as e:
+                                messages.error(request, f'Error on row {index + 2}: {str(e)}')
+                    messages.success(request, 'Import completed successfully')
+                    return redirect('Add_product')
+                
+                except Exception as e:
+                    messages.error(request, f'Error reading the Excel file: {str(e)}')
+            else:
+                messages.error(request, 'Invalid file format. Please upload a valid Excel file.')
+
+        if 'form2' in request.POST and request.FILES.get('image'):
+                
+                product_name=request.POST.get("name")
+                decription=request.POST.get("description")
+                actual_count=request.POST.get("actual")
+                available_count=request.POST.get("avail")
+                img=request.FILES["image"]   
+                cat=request.POST.get("category")
+                category=Category.objects.get(name=cat)
+                sub = request.POST.get('sub_category')
+                sub_category = SubCategory.objects.get(name_sub=sub) 
+                unit_price = request.POST.get('unit_price')
+
+                a_price = int(unit_price) * int(available_count)
+                ac_price = int(unit_price) * int(actual_count)
+                if int(actual_count) >= int(available_count):
+                    print("exec add product")
+                    Product.objects.create(created_by=request.user,name=product_name,decription=decription,actual_count=actual_count,available_count=available_count,category=category,image=img, dummy_count = available_count,sub_category = sub_category, unit_price = unit_price, actual_price=ac_price , available_price = a_price )
+                    sweetify.success(request, 'Look Up the Available Quantity',button="OK")
+                    return redirect("Add_product")
+                else:
+                    sweetify.warning(request, 'Product added successfully',button="OK")
+                    return redirect("Add_product")
    cart=Cart.objects.filter(created_by=request.user)
    count = cart.count()
-   return render (request,"adminview/add_product.html",{"category":category, "products":products,'count':count, 'sub_category':sub_category,})
+   return render (request,"adminview/add_product.html",{"category":category, "products":products,'count':count, 'sub_category':sub_category,})     
 
 #View-Product-For-Admin-SuperAdmin
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
@@ -492,13 +534,23 @@ def remove_product(request, pk):
 @login_required(login_url='login')
 def add_category(request):
     categories = Category.objects.all()
+    sub_category = SubCategory.objects.all()
     existing_categories = Category.objects.values_list('name', flat=True)
+    existing_sub_categories = SubCategory.objects.values_list('name_sub', flat=True)
     if request.method == "POST":
-         name = request.POST.get('name')
-         Category.objects.create(name = name, created_by = request.user)
+         if 'form1' in request.POST:
+            name = request.POST.get('form1')
+            cat=request.POST.get("category")
+            category=Category.objects.get(name=cat)
+            SubCategory.objects.create(name_sub = name, created_by = request.user,category=category)
+            return redirect('Add_category')
+         elif 'form2' in request.POST:
+            name = request.POST.get('form2')
+            Category.objects.create(name = name, created_by = request.user)
+            return redirect('Add_category')
     cart=Cart.objects.filter(created_by=request.user)
     count = cart.count()     
-    return render(request, 'adminview/add_category.html', {'categories': categories,'existing_categories': list(existing_categories), 'count':count,})     
+    return render(request, 'adminview/add_category.html', {'sub_category': sub_category,'categories': categories,'existing_categories': list(existing_categories), 'count':count,'existing_sub_categoryies': list(existing_sub_categories)})     
 
 
 
@@ -542,18 +594,6 @@ def edit_category(request, category_id):
     count = cart.count()
     return render(request, 'adminview/edit_category.html', {"category":category, 'count':count,})
 
-def add_subcategory(request):
-  sub_category = SubCategory.objects.all()
-  categories = Category.objects.all()
-  existing_categories = SubCategory.objects.values_list('name_sub', flat=True)
-  if request.method == "POST":
-      name = request.POST.get('name')
-      cat=request.POST.get("category")
-      category=Category.objects.get(name=cat)
-      SubCategory.objects.create(name_sub = name, created_by = request.user,category=category)
-  return render(request, 'adminview/add_subcategory.html', {'sub_category': sub_category, 'existing_categories': list(existing_categories), 'categories':categories,})  
-
-
 @allowed_user(allowed_roles=['admin', 'superadmin'])
 @login_required(login_url='login')
 def sub_category(request):
@@ -568,7 +608,7 @@ def sub_category(request):
 def remove_subcategory(request, subcategory_id):
     category = SubCategory.objects.get(id = subcategory_id)
     category.delete()
-    return redirect('Add_subcategory')  
+    return redirect('Add_category')  
 
 
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
@@ -584,7 +624,7 @@ def edit_subcategory(request, subcategory_id):
        if new_category_name:
             category.name_sub = new_category_name
             category.save()
-            return redirect('Add_subcategory')
+            return redirect('Add_category')
     cart=Cart.objects.filter(created_by=request.user)
     count = cart.count()
     return render(request, 'adminview/edit_sub_category.html', {"category":category, 'count':count,})      
@@ -604,17 +644,10 @@ def edit_product_view(request, product_id):
          ac_price = float(unit_price) * float(actual_stock)
          print(c_qty)
          print(a_stock)
+         print(unit_price)
 
-         par_unit_price = request.POST.get('par_curr_price') 
-         par_price = int(par_unit_price) * c_qty
-
-         actual_price = par_price + product.actual_price
-         available_price = par_price + product.available_price
-
-
-
-         if int(par_unit_price) != 0:
-          if(a_stock <= product.actual_count):
+     
+         if(a_stock <= product.actual_count):
                 product.name = product_name
                 product.decription = decription
                 product.unit_price = unit_price
@@ -624,21 +657,53 @@ def edit_product_view(request, product_id):
                 product.actual_price = ac_price
                 product.save()
                 return redirect('product')
+         else:
+             messages.warning(request, 'Give the correct insight of that!')
+             return redirect('product')
               
-         else: 
-            if(a_stock <= product.actual_count):
-                product.name = product_name
-                product.decription = decription
-                product.unit_price = unit_price
-                product.available_count = a_stock
-                product.available_price = available_price
-                product.actual_price = actual_price
-                product.actual_count = actual_stock
-                product.save()
-                return redirect('product') 
+    
 
     return render(request, 'adminview/edit_product.html', {'product':product})
 
 
+# def import_data_to_db(request):
+#     if request.method == "POST":
+#         file = request.FILES['file']
+#         if file.name.endswith('.xlsx'):
+#             try:
+#                 df = pd.read_excel(file, sheet_name="Sheet1")
+#                 for index, row in df.iterrows():
+#                         try:
+#                             category, created = Category.objects.get_or_create(created_by=request.user,name = row['category'])
+#                             sub_category,created = SubCategory.objects.get_or_create(category = category, name_sub= row['sub_category'], created_by = request.user)
+
+#                             product, created = Product.objects.update_or_create(
+#                                 name = row['name'],
+#                                 decription = row['description'],
+#                                 actual_count = row['actual_count'],
+#                                 available_count = row['available_count'],
+#                                 unit_price = row['unit_price'],
+#                                 category = category,
+#                                 sub_category = sub_category,
+#                                 created_by = request.user,
+#                                 actual_price = row['unit_price'] * row['actual_count'],
+#                                 available_price = row['unit_price'] * row['available_count'],
+#                             )
+                            
+#                             if not created:
+#                                         messages.success(request, f'Updated {product}')
+
+#                         except Exception as e:
+#                             messages.error(request, f'Error on row {index + 2}: {str(e)}')
+#                 messages.success(request, 'Import completed successfully')
+#                 return redirect('import')
+            
+#             except Exception as e:
+#                 messages.error(request, f'Error reading the Excel file: {str(e)}')
+#         else:
+#             messages.error(request, 'Invalid file format. Please upload a valid Excel file.')
+            
+                    
+#     return render(request, 'excel.html')
 
 

@@ -37,7 +37,7 @@ urlpatterns = [
     
 
     #Sub-Category
-    path('add_subcategory/', views.add_subcategory, name="Add_subcategory"),
+    # path('add_subcategory/', views.add_subcategory, name="Add_subcategory"),
     path('delte_subcategory/<int:subcategory_id>/', views.remove_subcategory, name="delete_subcategory"),
     path('edit_subcategory/<int:subcategory_id>/', views.edit_subcategory, name="edit_subcategory"),
     path('sub_category/', views.sub_category, name="sub_category"),
