@@ -54,13 +54,13 @@
                 </div>
 
                 <div class="mb-3">
-                  <label for="exampleInputEmail1" class="form-label">Total Quantity</label>
-                  <p class="form-control">{{product.actual_count}}</p>
+                  <label for="actual_quantity">Actual Quantity</label>
+                  <input type="number" class="form-control  border border-primary border-3" id="exampleInputPassword1" name="actual_qu" value="{{product.actual_count}}">
                 </div>
 
                 <div class="mb-3">
-                  <label for="exampleInputEmail1" class="form-label">Available Quantity</label>
-                  <p class="form-control">{{product.available_count}}</p>
+                  <label for="available_quantity">Available Quantity</label>
+                  <input type="text" class="form-control  border border-primary border-3" id="exampleInputPassword1" name="available_qu" value="{{product.available_count}}">
                 </div>
                 
                   <div class="mb-3">
@@ -82,7 +82,7 @@
                   </div>
                   <div class="mb-3">
                     <label for="exampleInputPassword1" class="form-label">IS ACTIVE</label>
-                    <input type="checkbox" class="border border-primary border-3" value="0" id="exampleInputEmail1" name="is_active">
+                    <input type="checkbox" class="border border-primary border-3" value="{{product.is_active}}" id="exampleInputEmail1" name="is_active">
                   </div>
                 <button type="submit" class="btn btn-primary">Submit</button>
               </form>

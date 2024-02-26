@@ -37,10 +37,8 @@ urlpatterns = [
     
 
     #Sub-Category
-    # path('add_subcategory/', views.add_subcategory, name="Add_subcategory"),
     path('delte_subcategory/<int:subcategory_id>/', views.remove_subcategory, name="delete_subcategory"),
     path('edit_subcategory/<int:subcategory_id>/', views.edit_subcategory, name="edit_subcategory"),
-    path('sub_category/', views.sub_category, name="sub_category"),
 
     #access-denied-page
     path('no_permisson/', views.no_permission, name='no_permission'),
@@ -48,7 +46,6 @@ urlpatterns = [
 
     #superadmin
     path('users/', views.users_list, name='users_list'),
-    # path('appoint_admin/<int:user_id>/', views.appoint_admin, name='appoint_admin'),
     path('remove_role/<int:user_id>/', views.remove_role, name='remove_role'),
 
     #cart
@@ -63,8 +60,6 @@ urlpatterns = [
     path('add_wastage/<int:item_id>/', AddWastageView.as_view(), name="Add_wastage"),
     path('return/<int:item_id>/', AddReturnView.as_view(), name="return"),
 
-    #excel
-    path('import/', views.import_data_to_db, name="import"),
 ]
 
 if settings.DEBUG:
