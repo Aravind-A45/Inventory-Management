@@ -56,7 +56,11 @@
               <tbody>
                 {% for item in cart_items %}
                 <tr>
+                  {% if item.product_name.image %}
                   <td><img src="{{item.product_name.image.url}}" alt="{{ item.product_name.name }}" class="img-fluid shadow-sm border border-black" height="150" width="200"></td>
+                  {% else %}
+                  <td><img src="{% static 'images/inven.jpg' %}" alt="loading" class="img-fluid shadow-sm border border-black" height="150" width="200"></td>
+                  {% endif %}
                   <td>{{ item.product_name.name }}</td>
                   <td>{{ item.quantity }}</td>
                   <td>{{ item.product_name.category }}</td>

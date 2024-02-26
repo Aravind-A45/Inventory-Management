@@ -34,7 +34,8 @@ def signup(request):
          'group':serializer2.data
       }
       return Response(serializer)
-   
+
+
 @api_view(['GET'])
 def home(request):
    if request.method=='GET':

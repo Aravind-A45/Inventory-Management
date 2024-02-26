@@ -10,13 +10,13 @@ class Product(models.Model):
     decription=models.CharField(max_length=100)
     actual_count=models.PositiveIntegerField()
     available_count=models.PositiveIntegerField()
-    dummy_count = models.PositiveIntegerField()
+    dummy_count = models.PositiveIntegerField(default = 0)
     category= models.ForeignKey('Category', on_delete=models.CASCADE)
     sub_category = models.ForeignKey('SubCategory', on_delete = models.CASCADE)
     created_at = models.DateTimeField(auto_now=True)
-    image = models.ImageField(upload_to='images')
-    actual_price = models.PositiveIntegerField()
-    available_price = models.PositiveIntegerField()
+    image = models.ImageField(upload_to='images', blank=True)
+    actual_price = models.FloatField()
+    available_price = models.FloatField()
     unit_price = models.FloatField()
     is_active = models.BooleanField(default = False)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -105,15 +105,3 @@ class AdminMail(models.Model):
     mail=models.CharField(max_length=50)
 
 
-class Stock(models.Model):
-    name = models.CharField(max_length=255) 
-    actual_stock = models.PositiveIntegerField() 
-    available_stock = models.PositiveIntegerField()
-    actual_price = models.FloatField() 
-    available_price = models.FloatField()
-    unit_price = models.FloatField()
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    sub_category = models.ForeignKey('SubCategory', on_delete=models.CASCADE)
-
-    def __str__(self):
-      return self.name

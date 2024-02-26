@@ -62,6 +62,9 @@ urlpatterns = [
     path('return_all/<int:item_id>/', views.return_all, name='return_all'),
     path('add_wastage/<int:item_id>/', AddWastageView.as_view(), name="Add_wastage"),
     path('return/<int:item_id>/', AddReturnView.as_view(), name="return"),
+
+    #excel
+    path('import/', views.import_data_to_db, name="import"),
 ]
 
 if settings.DEBUG:

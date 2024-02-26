@@ -30,7 +30,6 @@ from django.db import transaction
 from django_ratelimit.decorators import ratelimit
 from django.conf import settings
 from tablib import Dataset
-from .resources import productResource
 import pandas as pd
 
 
@@ -123,7 +122,6 @@ def signup(request):
 #Home-Page
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 @login_required(login_url= 'login')
-@allowed_user(allowed_roles=['student_user','admin', 'superadmin'])
 def home(request):
     if len(request.user.username)>9:
         user = get_object_or_404(User, id=request.user.id)
@@ -173,19 +171,23 @@ def no_permission(request):
 # temporary_cart = defaultdict(int)
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 def add_to_cart(request, product_id):
+    print(product_id)
     product = Product.objects.select_for_update().get(id=product_id)
     if product.available_count == 0:
         messages.info(request, 'There is no available stock for this product.')
         return redirect('Home')
     if request.method == "POST":
         quantity = request.POST.get("count")
+        # print(quantity)
         if quantity is not None: 
             try:
                 # print(quantity)
                 quantity_int = int(quantity)
-                if 0 < quantity_int <= product.available_count and quantity_int <= product.dummy_count:
+                # print(quantity_int)
+                if 0 < quantity_int <= product.available_count:
+                    # print(quantity_int)
                     with transaction.atomic():
-                        if quantity_int <= product.dummy_count :
+                            # print(quantity_int)
                             a=0
                             try:
                                 cart=Cart.objects.get(product_name=product,created_by=request.user)
@@ -201,8 +203,6 @@ def add_to_cart(request, product_id):
                                 Cart.objects.create(product_name=product,quantity=a,created_by=request.user)  
                             except:
                                 Cart.objects.create(product_name=product,quantity=quantity_int,created_by=request.user)
-                        else:
-                            messages.warning(request, "Not Enough quantity available...")
                 else:
                     messages.warning(request, "look up a valid quantity.")
             except ValueError:
@@ -397,7 +397,19 @@ def users_list(request):
                 if email==i.mail:
                     sweetify.warning(request, 'Microsoft mail-id already exists ',button="OK")
                     return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins})
-            AdminMail.objects.create(mail=email)
+            
+            admin_group = Group.objects.get(name = 'admin')
+
+            user = User.objects.get(email = email)
+
+            student_user_group = Group.objects.get(name = 'student_user')
+
+            user.groups.remove(student_user_group)
+
+            user.groups.add(admin_group)
+
+            AdminMail.objects.create(mail = email)
+
         users = User.objects.all()
         return redirect('users_list')
     cart=Cart.objects.filter(created_by=request.user)
@@ -445,30 +457,41 @@ def add_product(request):
    sub_category = SubCategory.objects.all()
    if request.method=="POST":
         if 'form1' in request.POST:
-            file = request.FILES['file']
+            file = request.FILES.get('file')
             if file.name.endswith('.xlsx'):
                 try:
-                    df = pd.read_excel(file, sheet_name="Sheet1")
+                    df = pd.read_excel(file, sheet_name="Sheet1") 
+                    df = df.drop_duplicates(subset=["name"], keep='first')
                     for index, row in df.iterrows():
                             try:
-                                category, created = Category.objects.get_or_create(created_by=request.user,name = row['category'])
-                                sub_category,created = SubCategory.objects.get_or_create(category = category, name_sub= row['sub_category'], created_by = request.user)
+                                try:
+                                        if not row.isnull().any():
+                                            category, created = Category.objects.get_or_create(created_by=request.user,name = row['category'])
+                                            sub_category,created = SubCategory.objects.get_or_create(category = category, name_sub= row['sub_category'], created_by = request.user)
 
-                                product, created = Product.objects.update_or_create(
-                                    name = row['name'],
-                                    decription = row['description'],
-                                    actual_count = row['actual_count'],
-                                    available_count = row['available_count'],
-                                    unit_price = row['unit_price'],
-                                    category = category,
-                                    sub_category = sub_category,
-                                    created_by = request.user,
-                                    actual_price = row['unit_price'] * row['actual_count'],
-                                    available_price = row['unit_price'] * row['available_count'],
-                                )
-                                
-                                if not created:
-                                            messages.success(request, f'Updated {product}')
+                                            product, created = Product.objects.update_or_create(
+                                                name = row['name'],
+                                                decription = row['description'],
+                                                actual_count = row['actual_count'],
+                                                available_count = row['available_count'],
+                                                unit_price = row['unit_price'],
+                                                category = category,
+                                                sub_category = sub_category,
+                                                created_by = request.user,
+                                                actual_price = row['unit_price'] * row['actual_count'],
+                                                available_price = row['unit_price'] * row['available_count'],
+                                            )
+                                            
+                                            print(product)
+                                            if not created:
+                                                        messages.success(request, f'Updated {product}')
+                                        else:
+                                            print("HI Hello")
+                                            print("row",row)
+                                            messages.error(request, f'Error on row {index + 2}: Look up the {row}')
+        
+                                except Exception as e:
+                                        messages.error(request, f'Error on row {index + 2}: Look up the {row}')
 
                             except Exception as e:
                                 messages.error(request, f'Error on row {index + 2}: {str(e)}')
@@ -666,44 +689,53 @@ def edit_product_view(request, product_id):
     return render(request, 'adminview/edit_product.html', {'product':product})
 
 
-# def import_data_to_db(request):
-#     if request.method == "POST":
-#         file = request.FILES['file']
-#         if file.name.endswith('.xlsx'):
-#             try:
-#                 df = pd.read_excel(file, sheet_name="Sheet1")
-#                 for index, row in df.iterrows():
-#                         try:
-#                             category, created = Category.objects.get_or_create(created_by=request.user,name = row['category'])
-#                             sub_category,created = SubCategory.objects.get_or_create(category = category, name_sub= row['sub_category'], created_by = request.user)
+def import_data_to_db(request):
+    if request.method == "POST":
+        file = request.FILES.get('file')
+        if file.name.endswith('.xlsx'):
+            try:
+                df = pd.read_excel(file, sheet_name="Sheet1") 
+                for index, row in df.iterrows():
+                        try:
+                            try:
+                                    if not row.isnull().any():
+                                        category, created = Category.objects.get(created_by=request.user,name = row['category'])
+                                        sub_category,created = SubCategory.objects.get(category = category, name_sub= row['sub_category'], created_by = request.user)
 
-#                             product, created = Product.objects.update_or_create(
-#                                 name = row['name'],
-#                                 decription = row['description'],
-#                                 actual_count = row['actual_count'],
-#                                 available_count = row['available_count'],
-#                                 unit_price = row['unit_price'],
-#                                 category = category,
-#                                 sub_category = sub_category,
-#                                 created_by = request.user,
-#                                 actual_price = row['unit_price'] * row['actual_count'],
-#                                 available_price = row['unit_price'] * row['available_count'],
-#                             )
-                            
-#                             if not created:
-#                                         messages.success(request, f'Updated {product}')
+                                        product, created = Product.objects.update_or_create(
+                                            name = row['name'],
+                                            decription = row['description'],
+                                            actual_count = row['actual_count'],
+                                            available_count = row['available_count'],
+                                            unit_price = row['unit_price'],
+                                            category = category,
+                                            sub_category = sub_category,
+                                            created_by = request.user,
+                                            actual_price = row['unit_price'] * row['actual_count'],
+                                            available_price = row['unit_price'] * row['available_count'],
+                                        )
+                                        
+                                        print(product)
+                                        if not created:
+                                                    messages.success(request, f'Updated {product}')
+                                    else:
+                                        print("HI Hello")
+                                        messages.error(request, f'Error on row {index + 2}: Look up the {row}')
+    
+                            except Exception as e:
+                                    messages.error(request, f'Error on row {index + 2}: Look up the {row}')
 
-#                         except Exception as e:
-#                             messages.error(request, f'Error on row {index + 2}: {str(e)}')
-#                 messages.success(request, 'Import completed successfully')
-#                 return redirect('import')
+                        except Exception as e:
+                            messages.error(request, f'Error on row {index + 2}: {str(e)}')
+                messages.success(request, 'Import completed successfully')
+                return redirect('import')
             
-#             except Exception as e:
-#                 messages.error(request, f'Error reading the Excel file: {str(e)}')
-#         else:
-#             messages.error(request, 'Invalid file format. Please upload a valid Excel file.')
+            except Exception as e:
+                messages.error(request, f'Error reading the Excel file: {str(e)}')
+        else:
+            messages.error(request, 'Invalid file format. Please upload a valid Excel file.')
             
                     
-#     return render(request, 'excel.html')
+    return render(request, 'excel.html')
 
 

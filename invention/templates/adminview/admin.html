@@ -31,15 +31,7 @@
                 </div>
             </div>
         </div>
-        <div class="col">
-          <div class="card">
-              <div class="card-body">
-                  <h5 class="card-title text-center">Sub Category</h5>
-                  <p class="card-text text-center">Add Sub Category</p>
-                  <a href="{% url 'Add_subcategory' %}" class="btn btn-primary d-block mx-auto">Add Sub Catgories</a>
-              </div>
-          </div>
-      </div>
+  
     
         {% for group in request.user.groups.all %}
             {% if group.name == 'superadmin' %}
