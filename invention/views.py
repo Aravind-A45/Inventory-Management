@@ -33,17 +33,18 @@ from tablib import Dataset
 import pandas as pd
 
 
-
 #rest_api
 from rest_framework.decorators import api_view
 from rest_framework.response import Response    
 # Create your views here.
 
+#bulk import
+from .tasks import import_products_from_excel
 
-# def schedule_mail(request):
-#   schedule, created = CrontabSchedule.objects.get_or_create(hour = 18, minute = 30)
-#   task = PeriodicTask.objects.create(crontab=schedule, name="schedule_mail_task_"+"1", task="mail.tasks.send_mail_func" )
-#   return HttpResponse("Done")
+def bulk_import(request):
+    file_path = 'D:\\inv1.xlsx'
+    import_products_from_excel.delay(file_path)
+    return HttpResponse('Products import task has been scheduled.')
 
   
 def form_valid(self, form):
@@ -75,55 +76,63 @@ def custom_forbidden(request):
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 @unauthenticated_user
 def login(request):
-    try:
-
-            if request.user.is_authenticated:
+    if request.user.is_authenticated:
+        return redirect('Home')
+    
+    if request.method=='POST':
+        rollno=request.POST.get('rollno')
+        password = request.POST.get('password')
+        email = request.POST.get('email')
+        try:
+            user=auth.authenticate(username=rollno,password=password, email=email) 
+            if user != None:
+                auth.login(request,user)
                 return redirect('Home')
-            
-            if request.method=='POST':
-                rollno=request.POST.get('rollno')
-                password="iqube@kct"
-                try:
-                    user=auth.authenticate(username=rollno,password=password)
-                    if user != None:
-                        auth.login(request,user)
-                        return redirect('Home')
-                    else:
-                        return redirect('Register')
-                except:
-                    return redirect('no_permission')
-        
-            return render(request,'credential/login.html')
-    except:
-         return render(request, 'credential/login.html')
+            else:
+                return redirect('Register')
+        except:
+            return redirect('no_permission')
+ 
+    return render(request,'credential/login.html')
 
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 @unauthenticated_user
 def signup(request):
-    try:
-        details=User.objects.all()   
-        if request.user.is_authenticated:
-            return redirect('Home')
+    details = User.objects.all()
 
-        if request.method == "POST":
-            rollno = request.POST.get('rollno')
-            password='iqube@kct'
-            user = User.objects.create_user(username=rollno,password=password)
-            user=auth.authenticate(username=rollno,password=password)           
-            
-            #New user in student_user group
-            group = Group.objects.get(name='student_user')
-            user.groups.add(group)
-                
-            if user!=None:
-                auth.login(request,user)
-                sweetify.success(request, 'You are successfully created',button="OK")
-                messages.success(request, f"Account Successfully Created for {rollno}")
-                return redirect('Home')
+    if request.user.is_authenticated:
+        return redirect('login')
 
-        return render(request, 'credential/register.html')
-    except:
-         return render(request, 'credential/register.html')
+    if request.method == "POST":
+        rollno = request.POST.get('rollno')
+        password = request.POST.get('password')
+        con_password = request.POST.get('con_password')
+        email = request.POST.get('email')
+
+        pattern = r'(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[*.!@#$%^&(){}[\]:;<>,.?/~_+-=|\\]).{8,}'
+        
+        if re.match(pattern, password):
+          if password == con_password:
+            if User.objects.filter(username=rollno).exists():
+                messages.info(request, f"User with roll number {rollno} already exists.")
+                return redirect('Register')
+
+            user = User.objects.create_user(username=rollno, password=password, email=email)
+            user = authenticate(username=rollno, password=password, email=email)
+            admin_group = Group.objects.get(name='student_user')
+            user.groups.add(admin_group)
+            if user is not None:
+                return redirect('login')
+            else:
+                messages.error(request, "Invalid username or password.")
+          else:
+            messages.info(request, f"Password and Confirm Password are not matching")      
+        else:
+          messages.info(request, f"Password not matching the pattern")  
+
+    messages.success(request, f"Password should be 8 characters") 
+    messages.success(request, f"Password should be mixed of Alpha Numerics and Spl Characters") 
+    return render(request, 'credential/register.html')
 
 
 #Home-Page
@@ -530,52 +539,8 @@ def add_product(request):
         sub_category = SubCategory.objects.all()
         if request.method=="POST":
                 if 'form1' in request.POST:
-                    file = request.FILES.get('file')
-                    if file.name.endswith('.xlsx'):
-                        try:
-                            df = pd.read_excel(file, sheet_name="Sheet1") 
-                            df = df.drop_duplicates(subset=["name"], keep='first')
-                            for index, row in df.iterrows():
-                                    try:
-                                        try:
-                                                if not row.isnull().any():
-                                                    category, created = Category.objects.get_or_create(created_by=request.user,name = row['category'])
-                                                    sub_category,created = SubCategory.objects.get_or_create(category = category, name_sub= row['sub_category'], created_by = request.user)
-
-                                                    product, created = Product.objects.update_or_create(
-                                                        name = row['name'],
-                                                        decription = row['description'],
-                                                        actual_count = row['actual_count'],
-                                                        available_count = row['available_count'],
-                                                        unit_price = row['unit_price'],
-                                                        category = category,
-                                                        sub_category = sub_category,
-                                                        created_by = request.user,
-                                                        actual_price = row['unit_price'] * row['actual_count'],
-                                                        available_price = row['unit_price'] * row['available_count'],
-                                                    )
-                                                    
-                                                    print(product)
-                                                    if not created:
-                                                                messages.success(request, f'Updated {product}')
-                                                else:
-                                                    print("HI Hello")
-                                                    print("row",row)
-                                                    messages.error(request, f'Error on row {index + 2}: Look up the {row}')
-                
-                                        except Exception as e:
-                                                messages.error(request, f'Error on row {index + 2}: Look up the {row}')
-
-                                    except Exception as e:
-                                        messages.error(request, f'Error on row {index + 2}: {str(e)}')
-                            messages.success(request, 'Import completed successfully')
-                            return redirect('Add_product')
-                        
-                        except Exception as e:
-                            messages.error(request, f'Error reading the Excel file: {str(e)}')
-                    else:
-                        messages.error(request, 'Invalid file format. Please upload a valid Excel file.')
-
+                    res = import_products_from_excel()
+                    return res
                 if 'form2' in request.POST and request.FILES.get('image'):
                         
                         product_name=request.POST.get("name")
@@ -601,9 +566,9 @@ def add_product(request):
                             return redirect("Add_product")
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
-        return render (request,"adminview/add_product.html",{"category":category, "products":products,'count':count, 'sub_category':sub_category,}) 
+        return render (request,"adminview/add_product.html",{"category":category, "products":products, 'sub_category':sub_category,}) 
     except:
-         return render(request, "adminveiw/add_product.html",{"category":category, "products":products,'count':count, 'sub_category':sub_category,})    
+         return render(request, "adminveiw/add_product.html",{"category":category, "products":products, 'sub_category':sub_category,})    
 
 #View-Product-For-Admin-SuperAdmin
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)

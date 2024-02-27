@@ -28,10 +28,13 @@
             <p>{{ message }}</p>
             {% endfor %}
           </div>
+          <h1>Upload Excel File</h1>
           <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type="file" name="file" required>
-            <button type="submit" name="form1">Submit</button>
+              {% csrf_token %}
+              <label for="file">Select Excel File:</label>
+              <input type="file" name="file" id="file">
+              <br>
+              <input type="submit" name="form1" value="Upload">
           </form>
               
           <div class="col p-4 d-flex flex-column position-static" >
