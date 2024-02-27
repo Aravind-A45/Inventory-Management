@@ -15,10 +15,10 @@ class Product(models.Model):
     sub_category = models.ForeignKey('SubCategory', on_delete = models.CASCADE)
     created_at = models.DateTimeField(auto_now=True)
     image = models.ImageField(upload_to='images', blank=True)
-    actual_price = models.FloatField()
-    available_price = models.FloatField()
-    unit_price = models.FloatField()
-    is_active = models.BooleanField(default = False)
+    actual_price = models.DecimalField(max_digits = 5,decimal_places = 2)
+    available_price = models.DecimalField(max_digits = 5,decimal_places = 2)
+    unit_price = models.DecimalField(max_digits = 5,decimal_places = 2)
+    is_active = models.BooleanField(default = True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):

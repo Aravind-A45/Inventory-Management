@@ -76,7 +76,6 @@ def custom_forbidden(request):
 @unauthenticated_user
 def login(request):
     try:
-
             if request.user.is_authenticated:
                 return redirect('Home')
             
@@ -220,13 +219,15 @@ def add_to_cart(request, product_id):
                                         messages.warning(request, "Not Enough quantity available.")
                                         return redirect('Home')
                                     cart=Cart.objects.get(product_name=product,created_by=request.user).delete()
-                                    Cart.objects.create(product_name=product,quantity=add,created_by=request.user)  
+                                    Cart.objects.create(product_name=product,quantity=add,created_by=request.user) 
+                                    sweetify.success(request, 'You are successfully added to the cart',button="OK") 
                                 except:
                                     Cart.objects.create(product_name=product,quantity=quantity_int,created_by=request.user)
                     else:
                         messages.warning(request, "look up a valid quantity.")
                 except ValueError:
                     return HttpResponse("Invalid quantity")
+                sweetify.success(request, 'You are successfully added to the cart',button="OK") 
         return redirect('Home')
     except:
          cart=Cart.objects.filter(created_by=request.user)
@@ -554,13 +555,11 @@ def add_product(request):
                                                         actual_price = row['unit_price'] * row['actual_count'],
                                                         available_price = row['unit_price'] * row['available_count'],
                                                     )
-                                                    
+                                                    sweetify.success(request, 'You are successfully created',button="OK")
                                                     print(product)
                                                     if not created:
                                                                 messages.success(request, f'Updated {product}')
                                                 else:
-                                                    print("HI Hello")
-                                                    print("row",row)
                                                     messages.error(request, f'Error on row {index + 2}: Look up the {row}')
                 
                                         except Exception as e:
@@ -773,6 +772,7 @@ def edit_product_view(request, product_id):
                 curr_qty = request.POST.get('curr_qty')
                 available_qty = request.POST.get('available_qu')
                 actual_qty = request.POST.get('actual_qu')
+                product.is_active = not product.is_active
 
                 c_qty = int(curr_qty)
                 actual_Q = int(actual_qty)
@@ -786,7 +786,8 @@ def edit_product_view(request, product_id):
 
                 a_price = float(unit_price) * float(a_stock) 
                 ac_price = float(unit_price) * float(actual_stock)
-            
+
+    
                 if(a_stock <= actual_stock):
                         product.name = product_name
                         product.decription = decription
@@ -795,7 +796,9 @@ def edit_product_view(request, product_id):
                         product.available_price = a_price
                         product.actual_count = actual_stock
                         product.actual_price = ac_price
+                        print(product.is_active)
                         product.save()
+                        
                         sweetify.success(request, f'You are successfully Edited the {product.name}',button="OK")
                         return redirect('product')
                 else:

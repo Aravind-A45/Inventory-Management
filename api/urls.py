@@ -10,7 +10,8 @@ urlpatterns = [
     path('add_product/', views.add_product),
     path('return_form/', views.return_form),
     path('return_all/<int:item_id>/', views.return_all),
-    
+    path('cart/', views.cart, name='cart'),
+    path('own_cart/', views.own_cart, name='own_cart'),
 ]
 
 
@@ -32,7 +33,6 @@ urlpatterns = [
     path('remove_role/<int:user_id>/', views.remove_role, name='remove_role'),
 
     #cart
-    path('cart/', views.view_cart, name='view_cart'),
 
     #Return-form
     path('add_wastage/<int:item_id>/', AddWastageView.as_view(), name="Add_wastage"),

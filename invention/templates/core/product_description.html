@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block base %}
 
 <div class="container justify-content-around mt-5 p-4">
@@ -15,9 +17,15 @@
 
       <div class="col-6 bg-white rounded shadow border-black">
         <div class="card p-4 m-4">
+        {% if item.image %}
         <div class="row justify-content-center">
           <img src="{{item.image.url}}" class="card-img-top p-2 " alt="Product Image" style="width: 200px; height: 200px;">
         </div>
+        {% else %}
+        <div class="row justify-content-center">
+          <img src="{% static 'images/inven.jpg' %}" class="card-img-top p-2 " alt="Product Image" style="width: 200px; height: 200px;">
+        </div>
+        {% endif %}
         <hr>
           <div class="card-body">
             <h5 class="card-title">{{item.name}}</h5>

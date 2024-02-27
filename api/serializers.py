@@ -23,3 +23,21 @@ class LogSerializer(serializers.ModelSerializer):
     class Meta:
         model=Log
         fields=['product','quantity','created_at','status','acting','due_date']
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['name', 'created_by', 'created_at']
+class SubCategorySerializer(serializers.ModelSerializer):
+    category = CategorySerializer()
+    class Meta:
+        models = SubCategory
+        fields = ['name_sub', 'category', 'created_by', 'created_at']
+class CartSerializer(serializers.ModelSerializer):
+    product_name = ProductSerializer()
+    class Meta:
+        model = Cart
+        fields = ['product_name', 'quantity', 'created_by']
+
+    
+    

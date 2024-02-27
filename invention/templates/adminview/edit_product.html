@@ -82,7 +82,7 @@
                   </div>
                   <div class="mb-3">
                     <label for="exampleInputPassword1" class="form-label">IS ACTIVE</label>
-                    <input type="checkbox" class="border border-primary border-3" value="{{product.is_active}}" id="exampleInputEmail1" name="is_active">
+                    <input type="checkbox" {% if product.is_active %}checked{% endif %}>
                   </div>
                 <button type="submit" class="btn btn-primary">Submit</button>
               </form>
