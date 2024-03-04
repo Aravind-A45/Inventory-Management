@@ -5,7 +5,12 @@ from .models import *
 from celery import shared_task
 from datetime import datetime, timedelta
 from django.utils import timezone
-
+import os
+import xlrd
+import pandas as pd
+from django.core.exceptions import ObjectDoesNotExist
+import logging
+from django.contrib.auth.models import User
 
 @shared_task(bind=True)
 def send_notification_mail(self):
@@ -98,3 +103,26 @@ def send_stock_mail(self):
         print(f"An error occurred: {e}")
         return False
 
+@shared_task
+def import_products_from_excel(file_path):
+  try:
+    df = pd.read_excel(file_path)
+
+    df = df.head(5)
+
+    for index, row in df.iterrows():
+        Product.objects.create(
+          name=row['name'], 
+          decription=row['description'],
+          actual_count=row['actual_count'],
+          available_count=row['available_count'],
+          category=row['category'],
+          sub_category=row['sub_category'],
+          unit_price=row['unit_price'], 
+          created_by=row['created_by']
+          )
+
+    return True    
+  except Exception as e:
+    print(f"An error occurred: {e}")
+    return False

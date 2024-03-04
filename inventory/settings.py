@@ -9,10 +9,11 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import sentry_sdk
 from pathlib import Path
 import os
 from decouple import config
+from sentry_sdk.integrations.django import DjangoIntegration
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
 
     #Rest_framework
     'rest_framework',
+    'rest_framework.authtoken',
     
     #own
     'invention',
@@ -105,7 +107,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'inventory.wsgi.application'
 
-
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
@@ -222,3 +224,36 @@ SWEETIFY_SWEETALERT_LIBRARY = 'sweetalert2'
 
 CSRF_TRUSTED_ORIGINS = ["http://10.1.75.42",]
 
+
+REST_FRAMEWORK = { 
+    'DEFAULT_AUTHENTICATION_CLASSES': [ 
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication', 
+    ] 
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+
+
+
+
+if DEBUG == False:
+    sentry_sdk.init(
+        dsn="https://588f96e17a40b0ec10f72f9c83d584f6@o4506842669907968.ingest.sentry.io/4506842671808512",
+        enable_tracing=True,
+
+        integrations=[
+        DjangoIntegration(
+            transaction_style='url',
+            middleware_spans=True,
+            signals_spans=False,
+            cache_spans=False,
+        ),
+    ],
+    )

@@ -39,11 +39,14 @@
                         <a href="/return_form" class="nav-link active">Return</a>
                     </li>
                     {% for group in request.user.groups.all %}
-                        {% if group.name == 'admin' or group.name == 'superadmin' %}
+                        {% if group.name == 'admin' and group.name == 'superadmin' %}
                     <li>
                         <a class="nav-link active" href="{% url 'admin_views' %}">Admin</a>
                     </li> 
-
+                        {% elif group.name == 'admin' %}
+                        <li>
+                            <a class="nav-link active" href="{% url 'admin_views' %}">Admin</a>
+                        </li> 
                         {% endif %}
                     {% endfor %}
                 </ul>

@@ -21,6 +21,7 @@ urlpatterns = [
     #Admin-and-superadmin
     path('admin_views/', views.admin_view, name='admin_views'),
     path('wastage_render/', views.wastage, name='wastage_render'),
+    path('admin_views1/', views.admin_view1, name='admin_view1'),
     
     #Product
     path('add_product/', views.add_product ,name="Add_product"), 

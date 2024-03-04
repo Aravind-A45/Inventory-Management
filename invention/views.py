@@ -33,17 +33,18 @@ from tablib import Dataset
 import pandas as pd
 
 
-
 #rest_api
 from rest_framework.decorators import api_view
 from rest_framework.response import Response    
 # Create your views here.
 
+#bulk import
+from .tasks import import_products_from_excel
 
-# def schedule_mail(request):
-#   schedule, created = CrontabSchedule.objects.get_or_create(hour = 18, minute = 30)
-#   task = PeriodicTask.objects.create(crontab=schedule, name="schedule_mail_task_"+"1", task="mail.tasks.send_mail_func" )
-#   return HttpResponse("Done")
+def bulk_import(request):
+    file_path = 'D:\\inv1.xlsx'
+    import_products_from_excel.delay(file_path)
+    return HttpResponse('Products import task has been scheduled.')
 
   
 def form_valid(self, form):
@@ -75,80 +76,75 @@ def custom_forbidden(request):
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 @unauthenticated_user
 def login(request):
-    try:
-            if request.user.is_authenticated:
+    if request.user.is_authenticated:
+        return redirect('Home')
+    
+    if request.method=='POST':
+        rollno=request.POST.get('rollno')
+        password = request.POST.get('password')
+        email = request.POST.get('email')
+        try:
+            user=auth.authenticate(username=rollno,password=password, email=email) 
+            if user != None:
+                auth.login(request,user)
                 return redirect('Home')
-            
-            if request.method=='POST':
-                rollno=request.POST.get('rollno')
-                password="iqube@kct"
-                try:
-                    user=auth.authenticate(username=rollno,password=password)
-                    if user != None:
-                        auth.login(request,user)
-                        return redirect('Home')
-                    else:
-                        return redirect('Register')
-                except:
-                    return redirect('no_permission')
-        
-            return render(request,'credential/login.html')
-    except:
-         return render(request, 'credential/login.html')
+            else:
+                return redirect('Register')
+        except:
+            return redirect('no_permission')
+ 
+    return render(request,'credential/login.html')
 
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 @unauthenticated_user
 def signup(request):
-    try:
-        details=User.objects.all()   
-        if request.user.is_authenticated:
-            return redirect('Home')
+    details = User.objects.all()
 
-        if request.method == "POST":
-            rollno = request.POST.get('rollno')
-            password='iqube@kct'
-            user = User.objects.create_user(username=rollno,password=password)
-            user=auth.authenticate(username=rollno,password=password)           
-            
-            #New user in student_user group
-            group = Group.objects.get(name='student_user')
-            user.groups.add(group)
-                
-            if user!=None:
-                auth.login(request,user)
-                sweetify.success(request, 'You are successfully created',button="OK")
-                messages.success(request, f"Account Successfully Created for {rollno}")
-                return redirect('Home')
+    if request.user.is_authenticated:
+        return redirect('login')
 
-        return render(request, 'credential/register.html')
-    except:
-         return render(request, 'credential/register.html')
+    if request.method == "POST":
+        rollno = request.POST.get('rollno')
+        password = request.POST.get('password')
+        con_password = request.POST.get('con_password')
+        email = request.POST.get('email')
+
+        pattern = r'(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[*.!@#$%^&(){}[\]:;<>,.?/~_+-=|\\]).{8,}'
+        
+        if re.match(pattern, password):
+          if password == con_password:
+            if User.objects.filter(username=rollno).exists():
+                messages.info(request, f"User with roll number {rollno} already exists.")
+                return redirect('Register')
+
+            user = User.objects.create_user(username=rollno, password=password, email=email)
+            user = authenticate(username=rollno, password=password, email=email)
+            admin_group = Group.objects.get(name='student_user')
+            user.groups.add(admin_group)
+            if user is not None:
+                return redirect('login')
+            else:
+                messages.error(request, "Invalid username or password.")
+          else:
+            messages.info(request, f"Password and Confirm Password are not matching")      
+        else:
+          messages.info(request, f"Password not matching the pattern")  
+
+    messages.success(request, f"Password should be 8 characters") 
+    messages.success(request, f"Password should be mixed of Alpha Numerics and Spl Characters") 
+    return render(request, 'credential/register.html')
 
 
 #Home-Page
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 @login_required(login_url= 'login')
 def home(request):
-    try:
-        if len(request.user.username)>9:
-            user = get_object_or_404(User, id=request.user.id)
-            admin_group = Group.objects.get(name='admin') 
-            user.groups.add(admin_group)
-
         products = Product.objects.all()
-        query = request.GET.get('query', '')
-
-        
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
         
         return render(request, 'core/home.html', {'products': products, 'count':count,})
     
-    except:
-         products = Product.objects.all()
-         cart=Cart.objects.filter(created_by=request.user)
-         count = cart.count()
-         return render(request, 'core/home.html', {'product': products, 'count':count})
     
 
 
@@ -161,35 +157,26 @@ def product_description(request, pk):
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
         return render(request, 'core/product_description.html', {'item':item, 'count':count,})
+            
     except:
-         item = Product.objects.get(pk =pk)
          cart=Cart.objects.filter(created_by=request.user)
          count = cart.count()
-         return render(request, 'core/product_description.html',{'item':item, 'count':count})
+         return render(request, 'core/product_description.html',{'count':count})
 
 
 #About-Page
 @login_required(login_url='login')
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 def about(request):
-    try:
         cart=Cart.objects.filter(created_by=request.user)
-        count = cart.count()
-        
+        count = cart.count()    
         return render(request, 'core/about.html', {'count':count,})
-    except:
-         cart=Cart.objects.filter(created_by=request.user)
-         count = cart.count()
-         return render(request, 'core/about.html', {'count':count})
+    
 
 
 #Access-Denied-Page
 def no_permission(request):
-    try:
         return render(request, 'core/no_permission.html')
-    except:
-        return render(request, 'core/no_permission.html')
-
 
 #Cart Functionality
 
@@ -236,59 +223,37 @@ def add_to_cart(request, product_id):
 
 #View-Cart
 def view_cart(request):
-    try:
         cart=Cart.objects.filter(created_by=request.user)
+        count = cart.count()
         product=Product.objects.all()
         category=Category.objects.all()
-        count = cart.count()
         return render(request, 'cart/cart.html', {'cart_items':cart,'product':product,'category':category, 'count':count,})
-    except:
-         cart=Cart.objects.filter(created_by=request.user)
-         product=Product.objects.all()
-         category=Category.objects.all()
-         count = cart.count()
-         return render(request, 'cart/cart.html', {'cart_items':cart, 'product':product, 'category':category, 'count':count})
-
+    
 #Remove-Cart
 def remove_from_cart(request, product_id):
-    try:
         cart=Cart.objects.get(id=product_id,created_by=request.user)
         cart.delete()
         return redirect('view_cart')
-    except:
-         cart=Cart.objects.filter(created_by=request.user)
-         product=Product.objects.all()
-         category=Category.objects.all()
-         count = cart.count()
-         return render(request, 'cart/cart.html', {'cart_items':cart, 'product':product, 'category':category, 'count':count})
 
 
 
 #Submit-In-Cart
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 def submit_cart(request):
-    try:
         if request.method == "POST":
             due_date = request.POST.get('due_date')
-            for i in Cart.objects.filter(created_by=request.user):
+            for cart in Cart.objects.filter(created_by=request.user):
                 status='checked_in'
-                p=Product.objects.get(name=i.product_name)
-                if (p.available_count - i.quantity) < 0:
+                item=Product.objects.get(name=cart.product_name)
+                if (item.available_count - cart.quantity) < 0:
                     Cart.objects.filter(created_by=request.user).delete()
                     messages.warning(request, "Not Enough quantity available..")
                 else:
-                    Product.objects.filter(name=i.product_name).update(available_count=F('available_count')-i.quantity)
-                    PurchasedItem.objects.create(product=i.product_name, quantity=i.quantity, user=request.user,status=status,date_added=datetime.datetime.now(), due_date=due_date)
-                    Log.objects.create(product=i.product_name, quantity=i.quantity, user=request.user, status=status, created_at=datetime.datetime.now(), due_date=due_date)
+                    Product.objects.filter(name=cart.product_name).update(available_count=F('available_count')-cart.quantity)
+                    PurchasedItem.objects.create(product=cart.product_name, quantity=cart.quantity, user=request.user,status=status,date_added=datetime.datetime.now(), due_date=due_date)
+                    Log.objects.create(product=cart.product_name, quantity=cart.quantity, user=request.user, status=status, created_at=datetime.datetime.now(), due_date=due_date)
                     Cart.objects.filter(created_by=request.user).delete()
         return redirect("Home")
-
-    except:
-         cart=Cart.objects.filter(created_by=request.user)
-         product=Product.objects.all()
-         category=Category.objects.all()
-         count = cart.count()
-         return render(request, 'cart/cart.html', {'cart_items':cart, 'product':product, 'category':category, 'count':count})
 
 
 #Return-Form-View
@@ -299,15 +264,12 @@ def return_form(request):
         purchased_items = Log.objects.filter(user = request.user) 
         return render(request, 'cart/return_form.html', {'purchased_items':purchased_items, 'count':count,})
     except:
-         cart=Cart.objects.filter(created_by=request.user)
-         count = cart.count()
-         purchased_items = Log.objects.filter(user = request.user) 
-         return render(request, 'cart/return_form.html', {'purchased_items':purchased_items, 'count':count})
+         return render(request, 'cart/return_form.html', {'count':count})
+
 
 #Return-All
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 def return_all(request, item_id):
-    try:
         item = get_object_or_404(Log, pk=item_id)
         product = item.product
 
@@ -319,30 +281,22 @@ def return_all(request, item_id):
         product.save()
         item.delete()
         return redirect('return_form')
-    except:
-         cart = Cart.objects.filter(created_by = request.user)
-         count = cart.count()
-         purchased_items = Log.objects.filter(user = request.user)
-         return render(request, 'cart/return_form.html', {'purchased_items':purchased_items, 'count':count})    
-
+    
 
 #Return One-By-One Form
 class AddReturnView(View):
     def get(self, request, item_id):
-        try:
             categories = Category.objects.all()
             products = Log.objects.all()
-            item = get_object_or_404(Log, id=item_id)
             cart=Cart.objects.filter(created_by=request.user)
             count = cart.count()
+            item = get_object_or_404(Log, id=item_id)
             return render(
                 request,
                 'cart/return.html',
                 {'categories': categories, 'products': products, 'item': item, 'count':count}
             )
-        except:
-             return render(request, 'cart/return.html', {'categories':categories, 'products':products, 'item':item, 'count':count})
-    
+        
     def post(self, request, item_id):
         try:
             categories = Category.objects.all()
@@ -358,7 +312,6 @@ class AddReturnView(View):
                 item.quantity -= return_quantity
                 item.save()
                 product.available_count += quantity
-                product.dummy_count += quantity
                 product.save()
 
                 if item.quantity == 0:
@@ -377,28 +330,25 @@ class AddReturnView(View):
                 {'categories': categories, 'products': products, 'item': item, 'count':count,}
             )
         except:
-             return render(request, 'cart/return.html', {'categories':categories, 'products':products, 'item':item, 'count':count})
+             return render(request, 'cart/return.html', {'categories':categories, 'products':products, 'count':count})
 
 
 
 #Damaged-Form
 class AddWastageView(View):
     def get(self, request, item_id):
-        try:
             categories = Category.objects.all()
         
             products = Log.objects.all()
             item = get_object_or_404(Log, id=item_id)
             cart=Cart.objects.filter(created_by=request.user)
-            print(item.product.name)
             count = cart.count()
             return render(
                 request,
                 'cart/wastage.html',
                 {'categories': categories, 'products': products, 'item': item, 'count':count,}
             )
-        except:
-             return render(request, 'cart/wastage.html', {'categories':categories, 'products':products, 'item':item, 'count':count})
+    
 
     def post(self, request, item_id):
         try:
@@ -416,8 +366,8 @@ class AddWastageView(View):
                 Wastage.objects.create(user=request.user,product_name=item.product,quantity=damaged_quantity,reason=reason,category=item.product.category)
                 for product in products:
                     if item.product.name == product.name:
-                        s = damaged_quantity * product.unit_price
-                        product.available_price = product.available_price - s
+                        damaged_price = damaged_quantity * product.unit_price
+                        product.available_price = product.available_price - damaged_price
                         product.save()
                     if item.quantity == 0:
                         item.delete()
@@ -425,8 +375,6 @@ class AddWastageView(View):
 
                 return redirect('return_form') 
                 
-            else:
-                pass
             cart=Cart.objects.filter(created_by=request.user)
             count = cart.count()
             return render(
@@ -435,7 +383,7 @@ class AddWastageView(View):
                 {'categories': categories, 'products': products, 'item': item, 'count':count,}
             )
         except:
-             return render(request,'cart/wastage.html',{'categories': categories, 'products': products, 'item': item, 'count':count,})
+             return render(request,'cart/wastage.html',{'categories': categories, 'products': products, 'count':count,})
         
 #User-Groups
 
@@ -443,30 +391,22 @@ class AddWastageView(View):
 @login_required(login_url='login')
 @allowed_user(allowed_roles=['superadmin'])
 def users_list(request):
-    try:
         users = User.objects.all()
         admins=AdminMail.objects.all()
         pattern= r"^[a-zA-Z0-9_.]+@(kct\.)+(ac\.)+in$"
         if request.method=="POST":
             email=request.POST.get("email")
-            print(email)
             if re.match(pattern,email):
-                print("valid")
-                for i in admins:
-                    if email==i.mail:
-                        sweetify.warning(request, 'Microsoft mail-id already exists ',button="OK")
-                        return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins})
+                
+                if AdminMail.objects.filter(mail = email).exists():
+                    sweetify.warning(request, 'Microsoft mail-id already exists ',button="OK")
+                    return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins})
                 
                 admin_group = Group.objects.get(name = 'admin')
-
                 user = User.objects.get(email = email)
-
                 student_user_group = Group.objects.get(name = 'student_user')
-
                 user.groups.remove(student_user_group)
-
                 user.groups.add(admin_group)
-
                 AdminMail.objects.create(mail = email)
 
             users = User.objects.all()
@@ -474,36 +414,35 @@ def users_list(request):
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
         return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins, 'count':count,})
-    except:
-         return render(request, 'superadmin_view/users.html',{'users': users,'admins':admins, 'count':count,})
+   
 
 
 #Super-Admin-Remove-The-Admin-Role
 def remove_role(request, user_id):
-    try:
-        emails=AdminMail.objects.all()
         AdminMail.objects.filter(id=user_id).delete()
         return redirect('users_list')
-    except:
-         users = User.objects.all()
-         admins=AdminMail.objects.all()
-         cart=Cart.objects.filter(created_by=request.user)
-         count = cart.count()
-         return render(request, 'superadmin_view/users.html',{'users':users, 'admins':admins, 'count':count})
+
 
 #Log-For-Admin-SuperAdmin
 @login_required(login_url='login')
 @allowed_user(allowed_roles=['admin', 'superadmin'])
-def admin_view(request):
-    try:
+def admin_view(request): 
         log = Log.objects.all()
         purchased_items = PurchasedItem.objects.all()
         checked_out = CheckedOutLog.objects.all()
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
         return render(request, 'adminview/admin.html', {'log':log, 'checked_out':checked_out, 'purchased_items': purchased_items,'count':count,})
-    except:
-         return render(request, 'adminveiw/admin.html',{'log':log, 'checked_out':checked_out, 'purchased_items': purchased_items,'count':count,})
+
+@login_required(login_url='login')
+@allowed_user(allowed_roles=['admin', 'superadmin'])
+def admin_view1(request): 
+        log = Log.objects.all()
+        purchased_items = PurchasedItem.objects.all()
+        checked_out = CheckedOutLog.objects.all()
+        cart=Cart.objects.filter(created_by=request.user)
+        count = cart.count()
+        return render(request, 'adminview/admin1.html', {'log':log, 'checked_out':checked_out, 'purchased_items': purchased_items,'count':count,})
 
 
 #Wastage-Record-View-For-Admin-SuperAdmin
@@ -511,13 +450,11 @@ def admin_view(request):
 @allowed_user(allowed_roles=(['admin', 'superadmin']))
 @login_required(login_url='login')
 def wastage(request):
-    try:
         wastage = Wastage.objects.all()
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
         return render(request, 'adminview/wastage_render.html', {'wastage': wastage, 'count':count,})
-    except:
-         return render(request, 'adminview/wastage_render.html',{'wastage': wastage, 'count':count,})
+    
 
 
 #Add-Product-For-Admin-SuperAdmin
@@ -555,11 +492,13 @@ def add_product(request):
                                                         actual_price = row['unit_price'] * row['actual_count'],
                                                         available_price = row['unit_price'] * row['available_count'],
                                                     )
-                                                    sweetify.success(request, 'You are successfully created',button="OK")
+                                                    
                                                     print(product)
                                                     if not created:
                                                                 messages.success(request, f'Updated {product}')
                                                 else:
+                                                    print("HI Hello")
+                                                    print("row",row)
                                                     messages.error(request, f'Error on row {index + 2}: Look up the {row}')
                 
                                         except Exception as e:
@@ -592,47 +531,37 @@ def add_product(request):
                         ac_price = int(unit_price) * int(actual_count)
                         if int(actual_count) >= int(available_count):
                             print("exec add product")
-                            Product.objects.create(created_by=request.user,name=product_name,decription=decription,actual_count=actual_count,available_count=available_count,category=category,image=img, dummy_count = available_count,sub_category = sub_category, unit_price = unit_price, actual_price=ac_price , available_price = a_price )
-                            sweetify.success(request, 'Look Up the Available Quantity',button="OK")
+                            Product.objects.create(created_by=request.user,name=product_name,decription=decription,actual_count=actual_count,available_count=available_count,category=category,image=img,sub_category = sub_category, unit_price = unit_price, actual_price=ac_price , available_price = a_price )
+                            sweetify.warning(request, 'Product added successfully',button="OK")
+                           
                             return redirect("Add_product")
                         else:
-                            sweetify.warning(request, 'Product added successfully',button="OK")
+                            sweetify.success(request, 'Look Up the Available Quantity',button="OK")
                             return redirect("Add_product")
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
-        return render (request,"adminview/add_product.html",{"category":category, "products":products,'count':count, 'sub_category':sub_category,}) 
+        return render (request,"adminview/add_product.html",{"category":category, "products":products, 'sub_category':sub_category,}) 
     except:
-         return render(request, "adminveiw/add_product.html",{"category":category, "products":products,'count':count, 'sub_category':sub_category,})    
+         return render(request, "adminveiw/add_product.html",{"category":category, "products":products, 'sub_category':sub_category,})    
 
 #View-Product-For-Admin-SuperAdmin
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 @allowed_user(allowed_roles=(['admin', 'superadmin']))
 @login_required(login_url='login')
 def view_product(request):
-    try:
         products = Product.objects.all()
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
         return render(request, 'adminview/product.html', {'products':products, 'count':count,})
-    except:
-         return render(request, 'adminview/product.html', {'products':products, 'count':count,})
-
 
 #Remove-Product-For-Admin-SuperAdmin
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 @allowed_user(allowed_roles=(['admin', 'superadmin']))
 @login_required(login_url='login')
 def remove_product(request, pk):
-    try:
         product = Product.objects.get(pk = pk)
         product.delete()
         return redirect('product')
-    except:
-         products = Product.objects.all()
-         cart = Cart.objects.filter(created_by = request.user)
-         count = cart.count()
-         return render(request, 'adminview/product.html', {'products':products, 'count':count})
-
 
 #Add-Category-For-Admin-SuperAdmin
 # @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
@@ -667,13 +596,11 @@ def add_category(request):
 @allowed_user(allowed_roles=['admin', 'superadmin'])
 @login_required(login_url='login')
 def category(request):
-    try:
         categories = Category.objects.all()
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
         return render(request, 'adminview/editCategory.html', {'categories': categories, 'count':count,})
-    except:
-         return render(request, 'adminview/editCategory.html', {'categories': categories, 'count':count,})
+    
 
 
 #Remove-Category-For-Admin-SuperAdmin
@@ -681,18 +608,9 @@ def category(request):
 @allowed_user(allowed_roles=['admin', 'superadmin'])
 @login_required(login_url='login')
 def remove_category(request, category_id):
-    try:
         category = Category.objects.get(id = category_id)
         category.delete()
         return redirect('Add_category')
-    except:
-         categories = Category.objects.all()
-         sub_category = SubCategory.objects.all()
-         existing_categories = Category.objects.values_list('name', flat=True)
-         existing_sub_categories = SubCategory.objects.values_list('name_sub', flat=True)
-         cart = Cart.objects.filter(created_by = request.user)
-         count = cart.count()
-         return render(request, 'adminview/add_category.html', {'sub_category': sub_category,'categories': categories,'existing_categories': list(existing_categories), 'count':count,'existing_sub_categoryies': list(existing_sub_categories)})
 
 
 #Edit-Category-For-Admin-SuperAdmin
@@ -713,7 +631,7 @@ def edit_category(request, category_id):
                 count = cart.count()
             return render(request, 'adminview/edit_category.html', {"category":category, 'count':count,})
     except:
-         return render(request, 'adminview/edit_category.html', {"category":category, 'count':count,})
+         return render(request, 'adminview/edit_category.html', {'count':count,})
 
 
 
@@ -721,19 +639,9 @@ def edit_category(request, category_id):
 @allowed_user(allowed_roles=['admin', 'superadmin'])
 @login_required(login_url='login')
 def remove_subcategory(request, subcategory_id):
-    try:
         category = SubCategory.objects.get(id = subcategory_id)
         category.delete()
         return redirect('Add_category')  
-    except:
-         categories = Category.objects.all()
-         sub_category = SubCategory.objects.all()
-         existing_categories = Category.objects.values_list('name', flat=True)
-         existing_sub_categories = SubCategory.objects.values_list('name_sub', flat=True)
-         cart = Cart.objects.filter(created_by = request.user)
-         count = cart.count()
-         return render(request, 'adminview/add_category.html', {'sub_category': sub_category,'categories': categories,'existing_categories': list(existing_categories), 'count':count,'existing_sub_categoryies': list(existing_sub_categories)})
-
 
 @ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 @allowed_user(allowed_roles=['admin', 'superadmin'])
@@ -741,11 +649,8 @@ def remove_subcategory(request, subcategory_id):
 def edit_subcategory(request, subcategory_id):
     try:
         category = SubCategory.objects.get(id = subcategory_id)
-        print(subcategory_id)
         if request.method == "POST":
             new_category_name = request.POST.get('new_category_name')
-            print(new_category_name)
-
             if new_category_name:
                     category.name_sub = new_category_name
                     category.save()
@@ -754,16 +659,16 @@ def edit_subcategory(request, subcategory_id):
             count = cart.count()
         return render(request, 'adminview/edit_sub_category.html', {"category":category, 'count':count,})   
     except:
-         return render(request, 'adminview/edit_sub_category.html', {"category":category, 'count':count,})   
+         return render(request, 'adminview/edit_sub_category.html', {'count':count,})   
 
 
 @allowed_user(allowed_roles=['admin', 'superadmin'])
 @login_required(login_url='login')
 def edit_product_view(request, product_id):    
     try:
-        product = Product.objects.get(id = product_id)
         cart = Cart.objects.filter(created_by = request.user)
         count = cart.count()
+        product = Product.objects.get(id = product_id)
         try:
             if request.method=="POST":
                 product_name=request.POST.get("name")
@@ -796,7 +701,6 @@ def edit_product_view(request, product_id):
                         product.available_price = a_price
                         product.actual_count = actual_stock
                         product.actual_price = ac_price
-                        print(product.is_active)
                         product.save()
                         
                         sweetify.success(request, f'You are successfully Edited the {product.name}',button="OK")
@@ -806,6 +710,6 @@ def edit_product_view(request, product_id):
                     return redirect('product')
             return render(request, 'adminview/edit_product.html', {'product':product, 'count':count})
         except:
-             return render(request, 'adminview/edit_product.html', {'product':product, 'count':count})
+             return render(request, 'adminview/edit_product.html', {'count':count})
     except:
-         return render(request, 'adminview/edit_product.html', {'product':product, 'count':count})
+         return render(request, 'adminview/edit_product.html', {'count':count})

@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block base %}
+
 <div class="container mt-5">
     <div class="row row-cols-1 row-cols-md-3 g-4">
         <div class="col">
@@ -58,14 +59,13 @@
         <div class="container p-4 shadow mb-5 mt-2" id="search">
             <input type="text" id="rollNumberInput" class="form-control" placeholder="Enter Roll Number">
           </div>
-        
+          
         <div class="row">
-           <div class="admin col-2 btn btn-outline-primary"><a href="{% url 'admin_views' %}">Checked In Log</a></div>
-            <div class="col-2 btn btn-muted"><a href="{% url 'admin_view1' %}">Checked Out Log</a></div>
+            <div class="col-2 btn btn-muted"><a href="{% url 'admin_views' %}">Checked In Log</a></div>
+            <div class="col-2 btn btn-outline-primary"><a href="{% url 'admin_view1' %}">Checked Out Log</a></div>
         </div>
-        
     
-        <div class="card-body mt-2">
+        <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
@@ -78,12 +78,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for take in purchased_items reversed %}
+                        {% for take in checked_out %}
                         <tr>
                             <td>{{take.user}}</td>
                             <td>{{take.product.name}}</td>
                             <td>{{take.quantity}}</td>
-                            <td>{{take.date_added}}</td>
+                            <td>{{take.created_at}}</td>
                             <td>
                                 {% if take.status == 'checked_out' %}
                                 <span class="badge bg-danger">Checked out</span>
