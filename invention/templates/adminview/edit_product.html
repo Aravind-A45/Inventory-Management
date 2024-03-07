@@ -45,44 +45,52 @@
 
                 <div class="mb-3">
                   <label for="exampleInputEmail1" class="form-label">Product Name</label>
-                  <input type="text" class="form-control  border border-primary border-3" value="{{product.name}}" id="exampleInputEmail1" name="name">
+                  <input type="text" class="form-control" value="{{product.name}}" id="exampleInputEmail1" name="name">
                 </div>
 
                 <div class="mb-3">
                   <label for="exampleInputEmail1" class="form-label">Unit Price</label>
-                  <input type="number" min="0" value="{{product.unit_price}}" class="form-control  border border-primary border-3" id="exampleInputEmail1"  name="unit_price" required>
+                  <input type="number" min="0" value="{{product.unit_price}}" class="form-control" id="exampleInputEmail1"  name="unit_price" required>
                 </div>
 
                 <div class="mb-3">
                   <label for="actual_quantity">Actual Quantity</label>
-                  <input type="number" class="form-control  border border-primary border-3" id="exampleInputPassword1" name="actual_qu" value="{{product.actual_count}}">
+                  <input type="number" class="form-control" id="exampleInputPassword1" name="actual_qu" value="{{product.actual_count}}">
                 </div>
 
                 <div class="mb-3">
                   <label for="available_quantity">Available Quantity</label>
-                  <input type="text" class="form-control  border border-primary border-3" id="exampleInputPassword1" name="available_qu" value="{{product.available_count}}">
+                  <input type="text" class="form-control" id="exampleInputPassword1" name="available_qu" value="{{product.available_count}}">
                 </div>
                 
                   <div class="mb-3">
                     <label for="exampleInputPassword1" class="form-label">Description</label>
-                    <input type="text" class="form-control  border border-primary border-3" id="exampleInputPassword1" name="description" value="{{product.decription}}">
+                    <input type="text" class="form-control" id="exampleInputPassword1" name="description" value="{{product.decription}}">
                   </div>
                  
                   <div class="mb-3">
-                    <label for="exampleInputPassword1" class="form-label">Category</label>
-                    <p class="form-control">{{product.category.name}}</p>
-                  </div>
-                  <div class="mb-3">
-                    <label for="exampleInputPassword1" class="form-label">Sub Category</label>
-                    <p class="form-control">{{product.sub_category.name_sub}}</p>
-                  </div>
+                    <label for="select" class="form-label">Category</label>
+                    <select class="form-select" id="select" name="cat" required>
+                        {% for i in categories %}
+                            <option value="{{i.name}}">{{i.name}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                  <label for="select" class="form-label">Sub Category</label>
+                  <select class="form-select" id="select" name="sub_category" required>
+                      {% for i in sub_categories %}
+                          <option value="{{i.name_sub}}">{{i.name_sub}}</option>
+                      {% endfor %}
+                  </select>
+              </div>
                   <div class="mb-3">
                     <label for="exampleInputPassword1" class="form-label">Give the Quantity to Update in current Stock</label>
-                    <input type="text" class="form-control  border border-primary border-3" value="0" id="exampleInputEmail1" name="curr_qty">
+                    <input type="text" class="form-control" value="0" id="exampleInputEmail1" name="curr_qty">
                   </div>
                   <div class="mb-3">
                     <label for="exampleInputPassword1" class="form-label">IS ACTIVE</label>
-                    <input type="checkbox" {% if product.is_active %}checked{% endif %}>
+                    <input type="checkbox" {% if product.is_active %}checked{% endif %} name="booleanfield">
                   </div>
                 <button type="submit" class="btn btn-primary">Submit</button>
               </form>
@@ -114,6 +122,7 @@
           });
       });
   </script> -->
+ 
 </body>
 
 {% endblock %}

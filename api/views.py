@@ -9,16 +9,18 @@ import re
 from django.contrib.auth.models import Group, User
 from invention.models import *
 from django.db import transaction
+from rest_framework.decorators import api_view
 from django.contrib.auth.models import AnonymousUser
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from invention.decorators import *
 
-class LoginAPIView(APIView):
-        permission_classes = [AllowAny] 
-        def post(self, request, *args, **kwargs):
+@unauthenticated_user
+@api_view(['POST'])
+def LoginAPIView(request):
             serializer = LoginSerializer(data=request.data)
             if serializer.is_valid():
                 rollno = serializer.validated_data['rollno']
@@ -38,9 +40,9 @@ class LoginAPIView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class SignupAPIView(APIView):
-    permission_classes = [AllowAny  ]
-    def post(self, request, *args, **kwargs):
+@unauthenticated_user
+@api_view(['POST'])
+def SignupAPIView(request):
         try:
             serializer = SignupSerializer(data=request.data)
             if serializer.is_valid():
@@ -60,7 +62,7 @@ class SignupAPIView(APIView):
                             user = User.objects.create_user(username = rollno, password = password, email = email)
                             admin_group = Group.objects.get(name = 'student_user')
                             user.groups.add(admin_group)
-                            return Response({'token':'Created', 'detail': 'Signed up successfully'}, status=status.HTTP_200_OK)
+                            return Response({'detail': 'Signed up successfully'}, status=status.HTTP_200_OK)
                         else:
                             return Response({'details': 'Password and confirm Password are not matching.'},status=status.HTTP_400_BAD_REQUEST)
                 else:

@@ -4,7 +4,7 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth.views import LogoutView
-from .views import return_form, AddWastageView, AddReturnView
+from .views import return_form, AddWastageView, AddReturnView, edit_product_view
 
 urlpatterns = [
     #authentication
@@ -17,17 +17,21 @@ urlpatterns = [
     path('', views.home ,name="Home"), 
     path('about/', views.about , name="About"),
     path('product_description/<int:pk>/', views.product_description, name="Product_description"),
+    path('electrical/', views.electrical_view, name='electrical'),
+    path('mechanical/', views.mechanical_view, name='mechanical'),
 
     #Admin-and-superadmin
     path('admin_views/', views.admin_view, name='admin_views'),
     path('wastage_render/', views.wastage, name='wastage_render'),
     path('admin_views1/', views.admin_view1, name='admin_view1'),
+    path('mechanical_product/', views.mechanical_product_view, name='mechanical_product'),
+    path('electrical_product/', views.electrical_product_view, name='electrical_product'),
     
     #Product
     path('add_product/', views.add_product ,name="Add_product"), 
     path('product/', views.view_product, name="product"),
     path('remove_product/<int:pk>/', views.remove_product, name="delete_product"),
-    path('edit_product_view/<int:product_id>/', views.edit_product_view , name="edit_product_view"),
+    path('edit_product_view/<int:product_id>/', edit_product_view.as_view() , name="edit_product_view"),
  
 
     #Category

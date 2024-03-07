@@ -3,7 +3,7 @@
 {% block base %}
 
 <div class="container mt-5">
-    <div class="row row-cols-1 row-cols-md-3 g-4">
+    <div class="row row-cols-1 row-cols-md-4 g-4">
         <div class="col">
             <div class="card">
                 <div class="card-body">
@@ -60,10 +60,14 @@
             <input type="text" id="rollNumberInput" class="form-control" placeholder="Enter Roll Number">
           </div>
           
-        <div class="row">
-            <div class="col-2 btn btn-muted"><a href="{% url 'admin_views' %}">Checked In Log</a></div>
-            <div class="col-2 btn btn-outline-primary"><a href="{% url 'admin_view1' %}">Checked Out Log</a></div>
-        </div>
+          <div class="d-flex flex-row bd-highlight mb-3">
+            <div class="p-2 bd-highlight">
+              <a href="{% url 'admin_views' %}" class="text-decoration-none fs-5">Checked In Log</a>
+            </div>
+            <div class="p-2 bd-highlight">
+              <a href="{% url 'admin_view1' %}" class="text-decoration-none text-black fs-5 fw-bold">Checked Out Log</a>
+            </div>
+          </div>
     
         <div class="card-body">
             <div class="table-responsive">

@@ -28,9 +28,9 @@ class Product(models.Model):
     sub_category = models.ForeignKey('SubCategory', on_delete = models.CASCADE)
     created_at = models.DateTimeField(auto_now=True)
     image = models.ImageField(upload_to='images', blank=True)
-    actual_price = models.DecimalField(max_digits = 5,decimal_places = 2)
-    available_price = models.DecimalField(max_digits = 5,decimal_places = 2)
-    unit_price = models.DecimalField(max_digits = 5,decimal_places = 2)
+    actual_price = models.DecimalField(max_digits = 10,decimal_places = 5)
+    available_price = models.DecimalField(max_digits = 10,decimal_places = 5)
+    unit_price = models.DecimalField(max_digits = 10,decimal_places = 5)
     is_active = models.BooleanField(default = True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
 

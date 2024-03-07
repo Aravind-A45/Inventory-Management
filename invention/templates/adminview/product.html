@@ -1,28 +1,50 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block base %}
 
 <div class="container p-4 shadow mb-5 mt-5" id="search">
   <input type="text" id="searchInput" class="form-control" placeholder="Search for a product...">
 </div>
-
+<div class="d-flex flex-row bd-highlight  justify-content-around mb-4">
+  <div class="p-2 bd-highlight fs-4 text-uppercase fw-semibold">
+    <div class="card shadow">
+      <div class="card-title p-5 "><a href="{% url 'electrical_product' %}" class="text-decoration-none text-dark mr-3  "><span><img src="{% static 'images/transistor.png' %}" alt="" width="40" height="40"></span><span class="m-1"></span>Electrical</a></div>
+    </div>
+  </div>
+  <div class="p-2 bd-highlight fs-4 text-uppercase fw-semibold">
+    <div class="card  shadow">
+      <div class="card-title p-5"><a href="{% url 'mechanical_product' %}" class="text-decoration-none text-dark"><span class="mr-2"><img src="{% static 'images/setting.png' %}" alt="" width="40" height="40"></span><span class="m-1"></span>Mechanical</a></div>
+    </div>
+  </div>
+</div>
 <div class="container my-4" id="productsContainer">
   <div class="row row-cols-1 row-cols-md-4 g-4" id="productList">
     {% for product in products reversed %}
     <div class="col product-card">
       <div class="card shadow">
         <div class="card-body">
-          <h5 class="card-title">{{ product.name }}</h5>
-          <p class="card-text">Actual Stock : {{ product.actual_count }}</p>
-          <p class="card-text">Available Stock : {{ product.available_count }}</p>
-          <p class="card-text">Category :  {{ product.category }}</p>
-          <p class="card-text">Unit Price : Rs.{{ product.unit_price}}</p>
-          <p class="card-text">Actual Total Amount : Rs.{{product.actual_price}}</p>
-          <p class="card-text">Available Amount : Rs.{{product.available_price}}</p>
-          <p class="card-text"><b>Description : </b><br>{{ product.decription }}</p>
-          <a href="{% url 'delete_product' product.id %}"><button class="btn btn-outline-primary"  onclick="return confirmRemoveItem('{{product.id }}')">Remove</button></a>
-          <form action="{% url 'edit_product_view' product.id %}">
-         <button class="mt-1 btn btn-outline-primary">Edit</button>
+          <h5 class="card-title fs-3 fw-semibold">{{ product.name }}</h5>
+          <p class="card-text mt-4 fs-6">Actual Stock : {{ product.actual_count }}</p>
+          <p class="card-text fs-6">Available Stock : {{ product.available_count }}</p>
+          <p class="card-text fs-6">Category :  {{ product.category }}</p>
+          <p class="card-text fs-6">Sub Category :  {{ product.sub_category }}</p>
+          <p class="card-text fs-6">Unit Price : Rs.{{ product.unit_price}}</p>
+          <p class="card-text fs-6">Is Active : {{ product.is_active}}</p>
+          <p class="card-text fs-6">Actual Total Amount : Rs.{{product.actual_price}}</p>
+          <details>
+            <summary class=""><strong class="">Description</strong><br></summary>
+              <p>{{ product.decription }}</p>
+            </details> 
+          <div class="row row-cols-1 row-cols-md-2 mt-4">
+            <div>
+              <a href="{% url 'delete_product' product.id %}"><button class="btn btn-outline-primary"  onclick="return confirmRemoveItem('{{product.id }}')">Remove</button></a>
+            </div>
+
+            <div>
+              <a href="{% url 'edit_product_view' product.id %}" >
+                <button class="mt-1 btn btn-outline-primary" type="submit">Edit</button></a>
+            </div>
+          </div>
         </form>
         </div>
       </div>
@@ -32,7 +54,9 @@
     {% endfor %}
   </div>
 </div>
-
+<div class="mt-4 mb-4 text-white">
+  .
+</div>
 <script>
   document.getElementById('searchInput').addEventListener('input', function() {
     const searchTerm = this.value.toLowerCase();
