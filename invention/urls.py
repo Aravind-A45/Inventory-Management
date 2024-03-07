@@ -32,6 +32,9 @@ urlpatterns = [
     path('product/', views.view_product, name="product"),
     path('remove_product/<int:pk>/', views.remove_product, name="delete_product"),
     path('edit_product_view/<int:product_id>/', edit_product_view.as_view() , name="edit_product_view"),
+
+    #bulk_import
+    path("excel/", views.excel, name="excel"),
  
 
     #Category

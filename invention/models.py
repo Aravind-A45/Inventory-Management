@@ -30,7 +30,7 @@ class Product(models.Model):
     image = models.ImageField(upload_to='images', blank=True)
     actual_price = models.DecimalField(max_digits = 10,decimal_places = 5)
     available_price = models.DecimalField(max_digits = 10,decimal_places = 5)
-    unit_price = models.DecimalField(max_digits = 10,decimal_places = 5)
+    unit_price = models.DecimalField(max_digits = 10,decimal_places = 2)
     is_active = models.BooleanField(default = True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
 
@@ -117,4 +117,5 @@ class CheckedOutLog(models.Model):
 class AdminMail(models.Model):
     mail=models.CharField(max_length=50)
 
-
+class File(models.Model):
+    file = models.FileField(upload_to = 'uploads')

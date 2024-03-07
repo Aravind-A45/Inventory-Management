@@ -104,25 +104,31 @@ def send_stock_mail(self):
         return False
 
 @shared_task
-def import_products_from_excel(file_path):
-  try:
-    df = pd.read_excel(file_path)
+def process_excel_file(id):
+    try:
+        file_obj = File.objects.get(id=id)
+        df = pd.read_excel(file_obj.file)
 
-    df = df.head(5)
+        for index, row in df.iterrows():
+            category, _ = Category.objects.get_or_create(name=row['Category'])
+            sub_category, _ = SubCategory.objects.get_or_create(name_sub=row['Sub_category'])
+            created_by, _ = User.objects.get_or_create(username=row['Created_by'])
 
-    for index, row in df.iterrows():
-        Product.objects.create(
-          name=row['name'], 
-          decription=row['description'],
-          actual_count=row['actual_count'],
-          available_count=row['available_count'],
-          category=row['category'],
-          sub_category=row['sub_category'],
-          unit_price=row['unit_price'], 
-          created_by=row['created_by']
-          )
+            if Product.objects.filter(name=row['Name']).exists():
+                return f"Product already exists: {row['Name']}"
 
-    return True    
-  except Exception as e:
-    print(f"An error occurred: {e}")
-    return False
+            Product.objects.update_or_create(
+                name=row['Name'],
+                decription=row['Description'],
+                actual_count=row['Actual_count'],
+                available_count=row['Available_count'],
+                category=category,
+                sub_category=sub_category,
+                unit_price=row['Unit_price'],
+                actual_price=row['Actual_count'] * row['Unit_price'],
+                available_price=row['Available_count'] * row['Unit_price'],
+                created_by=created_by
+            )
+        return "Success"
+    except Exception as e:
+        return f"An error occurred: {e}"

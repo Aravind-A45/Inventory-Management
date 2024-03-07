@@ -31,6 +31,8 @@ from django_ratelimit.decorators import ratelimit
 from django.conf import settings
 from tablib import Dataset
 import pandas as pd
+from datetime import datetime
+
 
 
 #rest_api
@@ -39,12 +41,21 @@ from rest_framework.response import Response
 # Create your views here.
 
 #bulk import
-from .tasks import import_products_from_excel
+from .tasks import *
 
-def bulk_import(request):
-    file_path = 'D:\\inv1.xlsx'
-    import_products_from_excel.delay(file_path)
-    return HttpResponse('Products import task has been scheduled.')
+def excel(request):
+    error_message = None
+    if request.method == 'POST' and request.FILES.get('file'):
+        uploaded_file = request.FILES['file']
+        file_obj = File.objects.create(file=uploaded_file)
+        messages.info(request, "Uploaded successfully")
+
+        task_result = process_excel_file.delay(file_obj.id)
+        if isinstance(task_result.result, str):
+            error_message = task_result.result
+
+    return render(request, 'excel.html', {'error_message': error_message})
+
 
   
 def form_valid(self, form):
@@ -243,8 +254,8 @@ def submit_cart(request):
                     messages.warning(request, "Not Enough quantity available..")
                 else:
                     Product.objects.filter(name=cart.product_name).update(available_count=F('available_count')-cart.quantity)
-                    PurchasedItem.objects.create(product=cart.product_name, quantity=cart.quantity, user=request.user,status=status,date_added=datetime.datetime.now(), due_date=due_date)
-                    Log.objects.create(product=cart.product_name, quantity=cart.quantity, user=request.user, status=status, created_at=datetime.datetime.now(), due_date=due_date)
+                    PurchasedItem.objects.create(product=cart.product_name, quantity=cart.quantity, user=request.user,status=status,date_added=timezone.now(), due_date=due_date)
+                    Log.objects.create(product=cart.product_name, quantity=cart.quantity, user=request.user, status=status, created_at=timezone.now(), due_date=due_date)
                     Cart.objects.filter(created_by=request.user).delete()
         return redirect("Home")
 
@@ -475,7 +486,6 @@ def add_product(request):
                         a_price = int(unit_price) * int(available_count)
                         ac_price = int(unit_price) * int(actual_count)
                         if int(actual_count) >= int(available_count):
-                            print("exec add product")
                             Product.objects.create(created_by=request.user,name=product_name,decription=decription,actual_count=actual_count,available_count=available_count,category=category,image=img,sub_category = sub_category, unit_price = unit_price, actual_price=ac_price , available_price = a_price )
                             sweetify.success(request, 'Product added successfully',button="OK")
                            
