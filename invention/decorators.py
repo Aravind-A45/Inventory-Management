@@ -23,11 +23,10 @@ def allowed_user(allowed_roles = []):
             if request.user.groups.exists():
                 group = request.user.groups.all()[0].name
             if (group in allowed_roles) or (p==10):
-            # if group in allowed_roles:
               return view_func(request, *args, **kwargs)
             else:
-                return render(request, 'core/no_permission.html')
-                # return HttpResponse("Hello")
+                return view_func(request, *args, **kwargs)
+
         return wrapper_func
     return decorator
 

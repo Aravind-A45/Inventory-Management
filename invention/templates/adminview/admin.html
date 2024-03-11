@@ -84,7 +84,7 @@
                     <tbody>
                         {% for take in purchased_items reversed %}
                         <tr>
-                            <td>{{take.user}}</td>
+                            <td>{{ take.user.username|slice:"-8:" }}</td>
                             <td>{{take.product.name}}</td>
                             <td>{{take.quantity}}</td>
                             <td>{{take.date_added}}</td>

@@ -82,9 +82,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for take in checked_out %}
+                        {% for take in checked_out reversed %}
                         <tr>
-                            <td>{{take.user}}</td>
+                            <td>{{ take.user.username|slice:"-8:" }}</td>
                             <td>{{take.product.name}}</td>
                             <td>{{take.quantity}}</td>
                             <td>{{take.created_at}}</td>

@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block base %}
+<div class="container">
+    <h1 class="text-center mt-4">𝗜𝗻𝘃𝗲𝗻𝘁𝗼𝗿𝘆 𝗨𝘀𝗲𝗿𝘀 𝗟𝗶𝘀𝘁</h1>
+    <div class="row justify-content-center my-5">
+        <div class="col-md-10">
+            <!-- <form name="myForm" onsubmit="return validateEmail()" method="post" id="call">
+                {% csrf_token %}
+                <input type="text" id="email" name="email" placeholder="admin@kct.ac.in" pattern="[a-zA-Z0-9_.+-]+@kct\.ac\.in" required>
+                <button type="submit">Submit</button>
+                <p id="result"></p>
+            </form> -->
+
+        <div class="container p-4 shadow-sm border border-1 border-dark mb-5 mt-2" id="search">
+            <input type="text" id="rollNumberInput" class="form-control border border-1 border-dark" placeholder="Enter Roll Number">
+          </div>
+        
+
+        <div class="d-flex flex-row bd-highlight mb-3">
+            <div class="p-2 bd-highlight">
+                <a href="{% url 'users_list' %}" class="text-decoration-none fs-5">Users List</a>
+              </div>
+            <div class="p-2 bd-highlight">
+              <a href="{% url 'users_list1' %}" class="text-decoration-none text-black fs-5 fw-bold">Admin List</a>
+            </div>
+        </div>
+
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+            <br>
+                {% for user in admins %}
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ user.mail }}</h5>
+                            <p class="card-text">
+                                {% for i in users%}
+                                {% if i.email == user.mail %}
+                                {% for group in i.groups.all %}
+                                    <p class="card-subtitle">{{ i.username|slice:"-8:" }}</p>
+                                    <span class="badge bg-primary">{{group.name}}</span>
+                                {% endfor %}
+                                {% endif %}
+                                {% endfor %}
+                            </p>
+                            <div class="row">
+                                <div class="col">
+                                    <a href="{% url 'remove_role' user_id=user.id %}" class="btn btn-danger"> Remove Admin Role</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %} 
+            </div>
+        </div>
+    </div>
+    <div class="text-white mt-4 mb-4">
+        .
+    </div>
+</div>
+<script>
+    function validateEmail() {
+        const enteredEmail = document.getElementById('email').value;
+        const microsoftPattern = /^[a-zA-Z0-9_.+-]+@(kct\.)+ac\.in$/; // Your Microsoft email pattern
+
+        if (microsoftPattern.test(enteredEmail)) {
+            const confirmation = confirm('Do you want to add this Microsoft email?');
+
+            if (confirmation) {
+                // Proceed to form submission
+                document.forms['myForm'].submit();
+            } else {
+                // Cancel the form submission
+                return false;
+            }
+        } else {
+            alert('Please enter a valid Microsoft email.');
+            return false;
+        }
+    }
+
+$(document).ready(function () {
+    $('#myTable').DataTable();
+});
+</script>
+
+
+{% endblock %}
+

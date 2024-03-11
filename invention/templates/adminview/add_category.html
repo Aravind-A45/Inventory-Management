@@ -56,7 +56,7 @@
     <div class="container mb-1 mt-5" style="display:flex;justify-content:center;align-items:center">
     <div class="col-md-12">
         <div class="row row-cols-md-2 g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm h-md-250 position-relative">
-        <div class="p-3">
+        <div class="p-3  border border-dark border-1">
           <form method="POST"  onsubmit="return checkCategory()">
             {% csrf_token %}
             <center><h1 style="font-style:Serif" class="mb-5">ADD SUB CATEGORY </h1></center>
@@ -80,7 +80,7 @@
           <div class="row row-cols-1 row-cols-md-3" id="productList">
             {% for category in sub_category reversed %}
             <div class="col product-card">
-              <div class="card shadow">
+              <div class="card shadow-sm">
                 <div class="card-body">
                   <h5 class="card-title">{{ category.name_sub }}</h5>
                   <a href="{% url 'edit_subcategory' category.id %}"><button class="mt-2 btn btn-outline-primary" onclick="return confirmSubmitItem('{{ category.id }}')">Edit</button></a> <a href="{% url 'delete_subcategory' category.id %}"><button class="btn btn-outline-info mt-2" onclick="return confirmRemoveItem('{{ category.id }}')">Remove</button></a>
@@ -94,7 +94,7 @@
         
           </div>
       </div>
-      <div>
+      <div class=" border border-dark border-1">
           <div class="col p-4 d-flex flex-column position-static" >
             <form method="POST" onsubmit="return checkCategory()">
                 {% csrf_token %}
@@ -110,7 +110,7 @@
             <div class="row row-cols-1 row-cols-md-2 g-4" id="productList">
               {% for category in categories reversed %}
               <div class="col product-card">
-                <div class="card shadow">
+                <div class="card shadow-sm">
                   <div class="card-body">
                     <h5 class="card-title">{{ category.name }}</h5>
                     <a href="{% url 'edit_category' category.id %}"><button class="mt-2 btn btn-outline-primary" onclick="return confirmSubmitItem('{{ category.id }}')">Edit</button></a> <a href="{% url 'delete_category' category.id %}"><button class="btn btn-outline-info mt-2" onclick="return confirmRemoveItem('{{ category.id }}')">Remove</button></a>

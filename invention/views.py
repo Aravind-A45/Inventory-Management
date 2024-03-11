@@ -41,6 +41,11 @@ from rest_framework.response import Response
 #bulk import
 from .tasks import import_products_from_excel
 
+
+
+def new_login(request):
+    return render(request, 'credential/new_login.html')
+
 def bulk_import(request):
     file_path = 'D:\\inv1.xlsx'
     import_products_from_excel.delay(file_path)
@@ -53,85 +58,23 @@ def form_valid(self, form):
         send_notification_mail.delay(email,message)
         return HttpResponse('We have sent you a confirmation mail!')
 
-#Microsoft-Authentication-View-Only-For-Admin
+# Microsoft-Authentication-View-Only-For-Admin
 def restrict_user_pipeline(strategy, details, user=None, is_new=False, *args, **kwargs):
     email=AdminMail.objects.all()
-    allowed_emails = ['nagulesh.22cs@kct.ac.in']
+    allowed_emails = []
     for e in email:
         allowed_emails.append(e.mail)
         
     for i in allowed_emails:
         print(i)
-    if user and user.email not in allowed_emails:
-        return redirect('custom_forbidden')
+    if user:
+         return ('')
     return {'details': details, 'user': user, 'is_new': is_new}
 
 def custom_forbidden(request):
     if request.method=="POST":
         return redirect('login')
     return render(request, 'custom_forbidden.html')
-
-
-#Login-And-Register
-@unauthenticated_user
-def login(request):
-    if request.user.is_authenticated:
-        return redirect('Home')
-    
-    if request.method=='POST':
-        rollno=request.POST.get('rollno')
-        password = request.POST.get('password')
-        email = request.POST.get('email')
-        try:
-            user=auth.authenticate(username=rollno,password=password, email=email) 
-            if user != None:
-                auth.login(request,user)
-                return redirect('Home')
-            else:
-                return redirect('Register')
-        except:
-            return redirect('no_permission')
- 
-    return render(request,'credential/login.html')
-
-
-@unauthenticated_user
-def signup(request):
-    details = User.objects.all()
-
-    if request.user.is_authenticated:
-        return redirect('login')
-
-    if request.method == "POST":
-        rollno = request.POST.get('rollno')
-        password = request.POST.get('password')
-        con_password = request.POST.get('con_password')
-        email = request.POST.get('email')
-
-        pattern = r'(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[*.!@#$%^&(){}[\]:;<>,.?/~_+-=|\\]).{8,}'
-        
-        if re.match(pattern, password):
-          if password == con_password:
-            if User.objects.filter(username=rollno).exists():
-                messages.info(request, f"User with roll number {rollno} already exists.")
-                return redirect('Register')
-
-            user = User.objects.create_user(username=rollno, password=password, email=email)
-            user = authenticate(username=rollno, password=password, email=email)
-            admin_group = Group.objects.get(name='student_user')
-            user.groups.add(admin_group)
-            if user is not None:
-                return redirect('login')
-            else:
-                messages.error(request, "Invalid username or password.")
-          else:
-            messages.info(request, f"Password and Confirm Password are not matching")      
-        else:
-          messages.info(request, f"Password not matching the pattern")  
-
-    messages.success(request, f"Password should be 8 characters") 
-    messages.success(request, f"Password should be mixed of Alpha Numerics and Spl Characters") 
-    return render(request, 'credential/register.html')
 
 
 #Home-Page
@@ -141,8 +84,13 @@ def home(request):
         products = Product.objects.all()
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+        name = request.user.username
+        user = name[-8:]
+
         
-        return render(request, 'core/home.html', {'products': products, 'count':count,})
+        return render(request, 'core/home.html', {'products': products, 'count':count, 'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
     
     
 
@@ -153,7 +101,11 @@ def product_description(request, pk):
         item = Product.objects.get(pk =pk)
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
-        return render(request, 'core/product_description.html', {'item':item, 'count':count,})
+        name = request.user.username
+        user = name[-8:]
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+        return render(request, 'core/product_description.html', {'item':item, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
 
 
 #About-Page
@@ -161,7 +113,11 @@ def product_description(request, pk):
 def about(request):
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()    
-        return render(request, 'core/about.html', {'count':count,})
+        name = request.user.username
+        user = name[-8:]
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+        return render(request, 'core/about.html', {'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
     
 
 
@@ -210,7 +166,11 @@ def add_to_cart(request, product_id):
     except:
          cart=Cart.objects.filter(created_by=request.user)
          count = cart.count()
-         return render(request, 'core/home.html', {'count':count})
+         name = request.user.username
+         user = name[-8:]
+         admin_group = request.user.groups.filter(name = "admin").exists()
+         super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+         return render(request, 'core/home.html', {'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
 
 #View-Cart
 @login_required(login_url='login')
@@ -219,7 +179,11 @@ def view_cart(request):
         count = cart.count()
         product=Product.objects.all()
         category=Category.objects.all()
-        return render(request, 'cart/cart.html', {'cart_items':cart,'product':product,'category':category, 'count':count,})
+        name = request.user.username
+        user = name[-8:]
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+        return render(request, 'cart/cart.html', {'cart_items':cart,'product':product,'category':category, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
     
 #Remove-Cart
 @login_required(login_url='login')
@@ -255,10 +219,14 @@ def return_form(request):
     try:
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
+        name = request.user.username
+        user = name[-8:]
         purchased_items = Log.objects.filter(user = request.user) 
-        return render(request, 'cart/return_form.html', {'purchased_items':purchased_items, 'count':count,})
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+        return render(request, 'cart/return_form.html', {'purchased_items':purchased_items, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
     except:
-         return render(request, 'cart/return_form.html', {'count':count})
+         return render(request, 'cart/return_form.html', {'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
 
 
 #Return-All
@@ -284,10 +252,14 @@ class AddReturnView(View):
             cart=Cart.objects.filter(created_by=request.user)
             count = cart.count()
             item = get_object_or_404(Log, id=item_id)
+            admin_group = request.user.groups.filter(name = "admin").exists()
+            name = request.user.username
+            user = name[-8:]
+            super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
             return render(
                 request,
                 'cart/return.html',
-                {'categories': categories, 'products': products, 'item': item, 'count':count}
+                {'categories': categories, 'products': products, 'item': item, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user}
             )
         
     def post(self, request, item_id):
@@ -317,13 +289,18 @@ class AddReturnView(View):
             
             cart=Cart.objects.filter(created_by=request.user)
             count = cart.count()
+            admin_group = request.user.groups.filter(name = "admin").exists()
+            super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+            name = request.user.username
+            user = name[-8:]
             return render(
                 request,
                 'cart/return.html',
-                {'categories': categories, 'products': products, 'item': item, 'count':count,}
+                {'categories': categories, 'products': products, 'item': item, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user}
             )
         except:
-             return render(request, 'cart/return.html', {'categories':categories, 'products':products, 'count':count})
+            
+             return render(request, 'cart/return.html', {'categories':categories, 'products':products, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
 
 
 
@@ -336,10 +313,14 @@ class AddWastageView(View):
             item = get_object_or_404(Log, id=item_id)
             cart=Cart.objects.filter(created_by=request.user)
             count = cart.count()
+            admin_group = request.user.groups.filter(name = "admin").exists()
+            super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+            name = request.user.username
+            user = name[-8:]
             return render(
                 request,
                 'cart/wastage.html',
-                {'categories': categories, 'products': products, 'item': item, 'count':count,}
+                {'categories': categories, 'products': products, 'item': item, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user}
             )
     
 
@@ -370,50 +351,109 @@ class AddWastageView(View):
                 
             cart=Cart.objects.filter(created_by=request.user)
             count = cart.count()
+            admin_group = request.user.groups.filter(name = "admin").exists()
+            super_admin_group = request.user.groups.filter(name = 'superadmin').exists()    
+            name = request.user.username
+            user = name[-8:]
             return render(
                 request,
                 'cart/wastage.html',
-                {'categories': categories, 'products': products, 'item': item, 'count':count,}
+                {'categories': categories, 'products': products, 'item': item, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user}
             )
         except:
-             return render(request,'cart/wastage.html',{'categories': categories, 'products': products, 'count':count,})
+             return render(request,'cart/wastage.html',{'categories': categories, 'products': products, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
         
 #User-Groups
 
 #Super-Admin-Only-view
 @login_required(login_url='login')
 @allowed_user(allowed_roles=['superadmin'])
+# def users_list(request):
+#         users = User.objects.all()
+#         admins=AdminMail.objects.all()
+#         pattern= r"^[a-zA-Z0-9_.]+@(kct\.)+(ac\.)+in$"
+#         if request.method=="POST":
+#             email=request.POST.get("email")
+#             if re.match(pattern,email):
+                
+#                 if AdminMail.objects.filter(mail = email).exists():
+#                     sweetify.warning(request, 'Microsoft mail-id already exists ',button="OK")
+#                     return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins})
+                
+#                 admin_group = Group.objects.get(name = 'admin')
+#                 user = User.objects.get(email = email)
+#                 student_user_group = Group.objects.get(name = 'student_user')
+#                 user.groups.remove(student_user_group)
+#                 user.groups.add(admin_group)
+#                 AdminMail.objects.create(mail = email)
+
+#             users = User.objects.all()
+#             return redirect('users_list')
+#         cart=Cart.objects.filter(created_by=request.user)
+#         count = cart.count()
+#         name = request.user.username
+#         user = name[-8:]
+#         admin_group = request.user.groups.filter(name = "admin").exists()
+#         super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+        
+#         return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
+
 def users_list(request):
         users = User.objects.all()
         admins=AdminMail.objects.all()
-        pattern= r"^[a-zA-Z0-9_.]+@(kct\.)+(ac\.)+in$"
-        if request.method=="POST":
-            email=request.POST.get("email")
-            if re.match(pattern,email):
-                
-                if AdminMail.objects.filter(mail = email).exists():
-                    sweetify.warning(request, 'Microsoft mail-id already exists ',button="OK")
-                    return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins})
-                
-                admin_group = Group.objects.get(name = 'admin')
-                user = User.objects.get(email = email)
-                student_user_group = Group.objects.get(name = 'student_user')
-                user.groups.remove(student_user_group)
-                user.groups.add(admin_group)
-                AdminMail.objects.create(mail = email)
-
-            users = User.objects.all()
-            return redirect('users_list')
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
-        return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins, 'count':count,})
-   
+        name = request.user.username
+        user1 = name[-8:]
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+
+        return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user1})
+
+def add_admin(request, user_id):
+        users = User.objects.all()
+        admins=AdminMail.objects.all()
+        cart=Cart.objects.filter(created_by=request.user)
+        count = cart.count()
+        name = request.user.username
+        user = name[-8:]
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+
+        user = User.objects.get(id = user_id)
+        if AdminMail.objects.filter(mail = user.email).exists():
+                    sweetify.warning(request, 'Microsoft mail-id already exists ',button="OK")
+                    return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins})
+        admin_group = Group.objects.get(name = 'admin')
+        user2 = User.objects.get(email = user.email)
+        student_user_group = Group.objects.get(name = 'student_user')
+        user2.groups.remove(student_user_group)
+        user2.groups.add(admin_group)
+        AdminMail.objects.create(mail = user2.email)
+
+        return redirect('users_list')
+
+
+def user_list1(request):
+        users = User.objects.all()
+        admins=AdminMail.objects.all()
+        cart=Cart.objects.filter(created_by=request.user)
+        count = cart.count()
+        name = request.user.username
+        user1 = name[-8:]
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+
+        return render(request, 'superadmin_view/users1.html', {'users': users,'admins':admins, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user1})
+
 
 
 #Super-Admin-Remove-The-Admin-Role
 def remove_role(request, user_id):
+        print(user_id)
+        print(AdminMail.objects.filter(id = user_id))
         AdminMail.objects.filter(id=user_id).delete()
-        return redirect('users_list')
+        return redirect('users_list1')
 
 
 #Log-For-Admin-SuperAdmin
@@ -425,7 +465,11 @@ def admin_view(request):
         checked_out = CheckedOutLog.objects.all()
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
-        return render(request, 'adminview/admin.html', {'log':log, 'checked_out':checked_out, 'purchased_items': purchased_items,'count':count,})
+        name = request.user.username
+        user = name[-8:]
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+        return render(request, 'adminview/admin.html', {'log':log, 'checked_out':checked_out, 'purchased_items': purchased_items,'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
 
 @login_required(login_url='login')
 @allowed_user(allowed_roles=['admin', 'superadmin'])
@@ -435,7 +479,11 @@ def admin_view1(request):
         checked_out = CheckedOutLog.objects.all()
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
-        return render(request, 'adminview/admin1.html', {'log':log, 'checked_out':checked_out, 'purchased_items': purchased_items,'count':count,})
+        name = request.user.username
+        user = name[-8:]
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+        return render(request, 'adminview/admin1.html', {'log':log, 'checked_out':checked_out, 'purchased_items': purchased_items,'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
 
 
 #Wastage-Record-View-For-Admin-SuperAdmin
@@ -445,7 +493,11 @@ def wastage(request):
         wastage = Wastage.objects.all()
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
-        return render(request, 'adminview/wastage_render.html', {'wastage': wastage, 'count':count,})
+        name = request.user.username
+        user = name[-8:]
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+        return render(request, 'adminview/wastage_render.html', {'wastage': wastage, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
     
 
 
@@ -457,8 +509,12 @@ def add_product(request):
         categories=Category.objects.all()
         products = Product.objects.all()
         sub_categories = SubCategory.objects.all()
-        print(categories)
-        print(sub_categories)
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+        cart=Cart.objects.filter(created_by=request.user)
+        count = cart.count()
+        name = request.user.username
+        user = name[-8:]
         if request.method=="POST":
                 if 'form2' in request.POST and request.FILES.get('image'):
                         
@@ -483,18 +539,22 @@ def add_product(request):
                         else:
                             sweetify.success(request, 'Look Up the Available Quantity',button="OK")
                             return redirect("Add_product")
-        return render (request,"adminview/add_product.html",{"category":categories, "products":products, 'sub_category':sub_categories,}) 
+        return render (request,"adminview/add_product.html",{"category":categories, "products":products, 'sub_category':sub_categories,'admin_group': admin_group, 'super_admin_group':super_admin_group,'count':count,'name':user}) 
     except:
-         return render(request, "adminview/add_product.html",{"category":categories, "products":products, 'sub_category':sub_categories,})    
+         return render(request, "adminview/add_product.html",{"category":categories, "products":products, 'sub_category':sub_categories,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})    
 
 #View-Product-For-Admin-SuperAdmin
 @allowed_user(allowed_roles=(['admin', 'superadmin']))
 @login_required(login_url='login')
 def view_product(request):
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
         products = Product.objects.all()
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
-        return render(request, 'adminview/product.html', {'products':products, 'count':count,})
+        name = request.user.username
+        user = name[-8:]
+        return render(request, 'adminview/product.html', {'products':products, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
 
 #Remove-Product-For-Admin-SuperAdmin
 @allowed_user(allowed_roles=(['admin', 'superadmin']))
@@ -509,10 +569,14 @@ def remove_product(request, pk):
 @login_required(login_url='login')
 def add_category(request):
     try:
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
         categories = Category.objects.all()
         sub_category = SubCategory.objects.all()
         existing_categories = Category.objects.values_list('name', flat=True)
         existing_sub_categories = SubCategory.objects.values_list('name_sub', flat=True)
+        name = request.user.username
+        user = name[-8:]
         if request.method == "POST":
             if 'form1' in request.POST:
                 name = request.POST.get('form1')
@@ -526,9 +590,9 @@ def add_category(request):
                 return redirect('Add_category')
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()     
-        return render(request, 'adminview/add_category.html', {'sub_category': sub_category,'categories': categories,'existing_categories': list(existing_categories), 'count':count,'existing_sub_categoryies': list(existing_sub_categories)}) 
+        return render(request, 'adminview/add_category.html', {'sub_category': sub_category,'categories': categories,'existing_categories': list(existing_categories), 'count':count,'existing_sub_categoryies': list(existing_sub_categories),'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user}) 
     except:
-         return render(request, 'adminview/add_category.html', {'sub_category': sub_category,'categories': categories,'existing_categories': list(existing_categories), 'count':count,'existing_sub_categoryies': list(existing_sub_categories)})   
+         return render(request, 'adminview/add_category.html', {'sub_category': sub_category,'categories': categories,'existing_categories': list(existing_categories), 'count':count,'existing_sub_categoryies': list(existing_sub_categories),'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})   
 
 
 
@@ -536,10 +600,14 @@ def add_category(request):
 @allowed_user(allowed_roles=['admin', 'superadmin'])
 @login_required(login_url='login')
 def category(request):
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
         categories = Category.objects.all()
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
-        return render(request, 'adminview/editCategory.html', {'categories': categories, 'count':count,})
+        name = request.user.username
+        user = name[-8:]
+        return render(request, 'adminview/editCategory.html', {'categories': categories, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
     
 
 
@@ -557,7 +625,11 @@ def remove_category(request, category_id):
 @login_required(login_url='login')
 def edit_category(request, category_id):
     try:
+            admin_group = request.user.groups.filter(name = "admin").exists()
+            super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
             category = Category.objects.get(id = category_id)
+            name = request.user.username
+            user = name[-8:]
             if request.method == "POST":
                 new_category_name = request.POST.get('new_category_name')
 
@@ -567,9 +639,9 @@ def edit_category(request, category_id):
                         return redirect('Add_category')
                 cart=Cart.objects.filter(created_by=request.user)
                 count = cart.count()
-            return render(request, 'adminview/edit_category.html', {"category":category, 'count':count,})
+            return render(request, 'adminview/edit_category.html', {"category":category, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,})
     except:
-         return render(request, 'adminview/edit_category.html', {'count':count,})
+         return render(request, 'adminview/edit_category.html', {'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
 
 
 
@@ -586,7 +658,11 @@ def remove_subcategory(request, subcategory_id):
 @login_required(login_url='login')
 def edit_subcategory(request, subcategory_id):
     try:
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
         category = SubCategory.objects.get(id = subcategory_id)
+        name = request.user.username
+        user = name[-8:]
         if request.method == "POST":
             new_category_name = request.POST.get('new_category_name')
             if new_category_name:
@@ -595,22 +671,26 @@ def edit_subcategory(request, subcategory_id):
                     return redirect('Add_category')
             cart=Cart.objects.filter(created_by=request.user)
             count = cart.count()
-        return render(request, 'adminview/edit_sub_category.html', {"category":category, 'count':count,})   
+        return render(request, 'adminview/edit_sub_category.html', {"category":category, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,})   
     except:
          cart = Cart.objects.filter(created_by = request.user)
          count = cart.count()
-         return render(request, 'adminview/edit_sub_category.html', {'count':count,})   
+         return render(request, 'adminview/edit_sub_category.html', {'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})   
 
 
 class edit_product_view(View):
      def get(self, request, product_id):
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
         cart = Cart.objects.filter(created_by = request.user)
         count = cart.count()
         product = Product.objects.get(id = product_id)
         categories = Category.objects.all()
         sub_categories = SubCategory.objects.all()
+        name = request.user.username
+        user = name[-8:]
         
-        return render(request, 'adminview/edit_product.html', {'product':product, 'count':count, 'categories': categories, 'sub_categories': sub_categories})
+        return render(request, 'adminview/edit_product.html', {'product':product, 'count':count, 'categories': categories, 'sub_categories': sub_categories,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
     
      def post(self, request, product_id):
             try:
@@ -668,33 +748,49 @@ class edit_product_view(View):
 #Electrical 
 @login_required(login_url='login')
 def electrical_view(request):
+     admin_group = request.user.groups.filter(name = "admin").exists()
+     super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
      products = Product.objects.all()
      cart=Cart.objects.filter(created_by=request.user)
      count = cart.count()
-     return render(request, 'core/electrical.html', {'products': products, 'count':count,})
+     name = request.user.username
+     user = name[-8:]
+     return render(request, 'core/electrical.html', {'products': products, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
 
 #Mechanical
 @login_required(login_url='login')
 def mechanical_view(request):
+     admin_group = request.user.groups.filter(name = "admin").exists()
+     super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
      products = Product.objects.all()
      cart=Cart.objects.filter(created_by=request.user)
      count = cart.count()
-     return render(request, 'core/mechanical.html', {'products': products, 'count':count,})
+     name = request.user.username
+     user = name[-8:]
+     return render(request, 'core/mechanical.html', {'products': products, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
 
 
 #mechanical Product
 @login_required(login_url='login')
 def mechanical_product_view(request):
+     admin_group = request.user.groups.filter(name = "admin").exists()
+     super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
      products = Product.objects.all()
      cart=Cart.objects.filter(created_by=request.user)
      count = cart.count()
-     return render(request, 'adminview/mechanicalproduct.html', {'products': products, 'count':count,})
+     name = request.user.username
+     user = name[-8:]
+     return render(request, 'adminview/mechanicalproduct.html', {'products': products, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
 
 
 #electrical Product
 @login_required(login_url='login')
 def electrical_product_view(request):
+     name = request.user.username
+     user = name[-8:]
+     admin_group = request.user.groups.filter(name = "admin").exists()
+     super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
      products = Product.objects.all()
      cart=Cart.objects.filter(created_by=request.user)
      count = cart.count()
-     return render(request, 'adminview/electricalproduct.html', {'products': products, 'count':count,})
+     return render(request, 'adminview/electricalproduct.html', {'products': products, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group, 'name':user})

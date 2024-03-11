@@ -4,14 +4,13 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth.views import LogoutView
-from .views import return_form, AddWastageView, AddReturnView, edit_product_view
+from .views import return_form, AddWastageView, AddReturnView, edit_product_view, users_list
 
 urlpatterns = [
-    #authentication
-    path('login/', views.login ,name="login"), 
-    path('signup/', views.signup ,name="Register"), 
+    #authentication 
     path('complete/azuread-tenant-oauth2/home/', views.home ,name="Home"),
     path('logout/', LogoutView.as_view() , name="logout"),
+    path('login/', views.new_login, name="login"),
 
     #Home-Page-And-navbar-page-For-Users
     path('', views.home ,name="Home"), 
@@ -50,8 +49,10 @@ urlpatterns = [
     path('forbidden/', views.custom_forbidden, name='custom_forbidden'),
 
     #superadmin
-    path('users/', views.users_list, name='users_list'),
+    path('users/', views.users_list , name='users_list'),
     path('remove_role/<int:user_id>/', views.remove_role, name='remove_role'),
+    path('add_admin/<int:user_id>/', views.add_admin, name='add_admin'),
+    path('user1/', views.user_list1, name="users_list1"),
 
     #cart
     path('cart/', views.view_cart, name='view_cart'),
