@@ -27,7 +27,6 @@ urlpatterns = [
     path('', include('invention.urls')),
     path('api/', include('api.urls')),
     path('', include('social_django.urls', namespace='social')),
-    path('api-token-auth', views.obtain_auth_token)
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:

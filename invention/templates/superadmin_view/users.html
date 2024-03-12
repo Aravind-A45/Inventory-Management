@@ -89,28 +89,40 @@
         }
     }
 
-$(document).ready(function () {
+ 
+document.addEventListener("DOMContentLoaded", function () {
+    var input = document.getElementById("rollNumberSearch");
+    var table = document.getElementById("myTable");
+    var rows = table.getElementsByTagName("tr");
+
+
+    input.addEventListener("input", function () {
+      var filter = input.value.toLowerCase();
+
+      for (var i = 1; i < rows.length; i++) {
+        var row = rows[i];
+        var rollNumberCell = row.getElementsByTagName("td")[0];
+        var emailCell = row.getElementsByTagName("td")[1];
+
+        if (rollNumberCell && emailCell) {
+          var rollNumber = rollNumberCell.textContent || rollNumberCell.innerText;
+          var email = emailCell.textContent || emailCell.innerText;
+
+          if (rollNumber.toLowerCase().includes(filter) || email.toLowerCase().includes(filter)) {
+            row.style.display = "";
+          } else {
+            row.style.display = "none";
+          }
+        }
+      }
+    });
+  });
+
+
+  $(document).ready(function () {
     $('#myTable').DataTable();
 });
 
-document.addEventListener('DOMContentLoaded', function () {
-    const rollNumberSearch = document.getElementById('rollNumberSearch');
-    const userRows = document.querySelectorAll('.user-row');
-
-    rollNumberSearch.addEventListener('input', function () {
-        const searchTerm = rollNumberSearch.value.trim().toLowerCase();
-
-        userRows.forEach(function (row) {
-            const rollNumber = row.querySelector('td:first-child').textContent.toLowerCase();
-
-            if (rollNumber.includes(searchTerm)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-    });
-});
 
 </script>
 

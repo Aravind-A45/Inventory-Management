@@ -78,7 +78,6 @@ def custom_forbidden(request):
 
 
 #Home-Page
-@ratelimit(key='ip', rate='10/m', method=ratelimit.ALL, block=True)
 @login_required(login_url= 'login')
 def home(request):
         products = Product.objects.all()
@@ -363,41 +362,10 @@ class AddWastageView(View):
         except:
              return render(request,'cart/wastage.html',{'categories': categories, 'products': products, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
         
-#User-Groups
 
-#Super-Admin-Only-view
+
 @login_required(login_url='login')
 @allowed_user(allowed_roles=['superadmin'])
-# def users_list(request):
-#         users = User.objects.all()
-#         admins=AdminMail.objects.all()
-#         pattern= r"^[a-zA-Z0-9_.]+@(kct\.)+(ac\.)+in$"
-#         if request.method=="POST":
-#             email=request.POST.get("email")
-#             if re.match(pattern,email):
-                
-#                 if AdminMail.objects.filter(mail = email).exists():
-#                     sweetify.warning(request, 'Microsoft mail-id already exists ',button="OK")
-#                     return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins})
-                
-#                 admin_group = Group.objects.get(name = 'admin')
-#                 user = User.objects.get(email = email)
-#                 student_user_group = Group.objects.get(name = 'student_user')
-#                 user.groups.remove(student_user_group)
-#                 user.groups.add(admin_group)
-#                 AdminMail.objects.create(mail = email)
-
-#             users = User.objects.all()
-#             return redirect('users_list')
-#         cart=Cart.objects.filter(created_by=request.user)
-#         count = cart.count()
-#         name = request.user.username
-#         user = name[-8:]
-#         admin_group = request.user.groups.filter(name = "admin").exists()
-#         super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
-        
-#         return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
-
 def users_list(request):
         users = User.objects.all()
         admins=AdminMail.objects.all()
@@ -410,6 +378,7 @@ def users_list(request):
 
         return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user1})
 
+@login_required(login_url='login')
 def add_admin(request, user_id):
         users = User.objects.all()
         admins=AdminMail.objects.all()
@@ -422,7 +391,7 @@ def add_admin(request, user_id):
 
         user = User.objects.get(id = user_id)
         if AdminMail.objects.filter(mail = user.email).exists():
-                    sweetify.warning(request, 'Microsoft mail-id already exists ',button="OK")
+                    sweetify.warning(request, 'This Mail Id already been admin!',button="OK")
                     return render(request, 'superadmin_view/users.html', {'users': users,'admins':admins})
         admin_group = Group.objects.get(name = 'admin')
         user2 = User.objects.get(email = user.email)
@@ -433,7 +402,7 @@ def add_admin(request, user_id):
 
         return redirect('users_list')
 
-
+@login_required(login_url='login')
 def user_list1(request):
         users = User.objects.all()
         admins=AdminMail.objects.all()
@@ -449,6 +418,7 @@ def user_list1(request):
 
 
 #Super-Admin-Remove-The-Admin-Role
+@login_required(login_url='login')
 def remove_role(request, user_id):
         print(user_id)
         print(AdminMail.objects.filter(id = user_id))
@@ -582,10 +552,16 @@ def add_category(request):
                 name = request.POST.get('form1')
                 cat=request.POST.get("category")
                 category=Category.objects.get(name=cat)
+                if SubCategory.objects.filter(name_sub = name).exists():
+                     sweetify.warning(request, f'The Sub Category already exists',button="OK")
+                     return redirect('Add_category')
                 SubCategory.objects.create(name_sub = name, created_by = request.user,category=category)
                 return redirect('Add_category')
             elif 'form2' in request.POST:
                 name = request.POST.get('form2')
+                if Category.objects.filter(name = name).exists():
+                     sweetify.warning(request, f'The Sub Category already exists',button="OK")
+                     return redirect('Add_category')
                 Category.objects.create(name = name, created_by = request.user)
                 return redirect('Add_category')
         cart=Cart.objects.filter(created_by=request.user)

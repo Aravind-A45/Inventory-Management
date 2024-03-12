@@ -2,13 +2,13 @@
 {% load static %}
 {% block base %}
 <style>
-   /* body {
-    background-color: rgb(183, 233, 247); 
-  }  */
+  /* body {
+    background-color: rgb(197, 232, 242); 
+  } */
 </style>
 
-<div class="container p-4 shadow-sm mb-5 mt-5 border border-1 border-dark" id="search">
-  <input type="text" id="searchInput" class="form-control border border-1 border-dark" placeholder="Search for a product...">
+<div class="container p-4 shadow-sm mb-5 mt-5 " id="search">
+  <input type="text" id="searchInput" class="form-control" placeholder="Search for a product...">
 </div>
 
 <div class="container my-4" id="productsContainer">
@@ -19,7 +19,7 @@
   </div>
   <div class="row justify-content-around mb-4">
     <div class="col-md-4 col-lg-2">
-      <div class="card shadow-sm border border-1 border-dark">
+      <div class="card shadow-sm">
         <div class="card-title p-3">
           <a href="{% url 'electrical' %}" class="text-decoration-none text-dark fw-semibold d-flex align-items-center">
             <img src="{% static 'images/transistor.png' %}" alt="" width="40" height="40">
@@ -30,7 +30,7 @@
     </div>
 
     <div class="col-md-4 col-lg-2">
-      <div class="card shadow-sm border border-1 border-dark">
+      <div class="card shadow-sm">
         <div class="card-title p-3">
           <a href="{% url 'mechanical' %}" class="text-decoration-none fw-semibold text-dark d-flex align-items-center">
             <img src="{% static 'images/setting.png' %}" alt="" width="40" height="40">
@@ -44,9 +44,9 @@
     {% for product in products %}
       {% if product.is_active  %}
         <div class="col product-card">
-          <div class="card shadow-sm border border-1 border-dark">
+          <div class="card shadow-sm">
             <div class="card-body">
-              <h5 class="card-title fs-3">{{ product.name }}</h5>
+              <h5 class="card-title fs-4">{{ product.name }}</h5>
               <p class="card-text mt-4 fs-6">Available Quantity: {{ product.available_count }}</p>
               <p class="card-textss fs-6">Category: {{ product.category }}</p>
               <p class="card-texts fs-6">Sub-Category: {{product.sub_category.name_sub}} </p>
