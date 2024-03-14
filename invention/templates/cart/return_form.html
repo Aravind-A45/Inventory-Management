@@ -4,6 +4,11 @@
 <body class="bg-gray-100">
   <div class="container py-4">
     <h1 class="text-center text-orange mb-4">Return Form</h1>
+    <div class="message mt-3">
+      {% for message in messages %}
+      <p class="fw-bold fs-5">{{ message }}</p>
+      {% endfor %}
+    </div>
     <div class="row row-cols-1 row-cols-md-3 g-4">
       {% for item in purchased_items %}
       <div class="col">

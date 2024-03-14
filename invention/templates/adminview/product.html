@@ -1,8 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block base %}
-
-<div class="container p-4 shadow mb-5 mt-5" id="search">
+<div class="row justify-content-center p-4 mt-5 fw-bold fs-2">
+  Product List
+</div>
+<div class="container p-4 shadow mb-5 mt-2" id="search">
   <input type="text" id="searchInput" class="form-control" placeholder="Search for a product...">
 </div>
 <div class="d-flex flex-row bd-highlight  justify-content-around mb-4">
@@ -30,7 +32,7 @@
           <p class="card-text fs-6">Sub Category :  {{ product.sub_category }}</p>
           <p class="card-text fs-6">Unit Price : Rs.{{ product.unit_price}}</p>
           <p class="card-text fs-6">Is Active : {{ product.is_active}}</p>
-          <p class="card-text fs-6">Actual Total Amount : Rs.{{product.actual_price}}</p>
+          <p class="card-text fs-6">Actual Total Amount : Rs.{{product.actual_price|stringformat:"d"|slice:":" }}</p>
           <details>
             <summary class=""><strong class="">Description</strong><br></summary>
               <p>{{ product.decription }}</p>

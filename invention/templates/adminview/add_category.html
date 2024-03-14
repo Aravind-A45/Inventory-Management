@@ -83,6 +83,7 @@
               <div class="card shadow-sm">
                 <div class="card-body">
                   <h5 class="card-title">{{ category.name_sub }}</h5>
+                  <div class="card-text">{{ category.category.name}}</div>
                   <a href="{% url 'edit_subcategory' category.id %}"><button class="mt-2 btn btn-outline-primary" onclick="return confirmSubmitItem('{{ category.id }}')">Edit</button></a> <a href="{% url 'delete_subcategory' category.id %}"><button class="btn btn-outline-info mt-2" onclick="return confirmRemoveItem('{{ category.id }}')">Remove</button></a>
                   </div>
                 </div>
@@ -131,6 +132,7 @@
       <div class="mb-5 mt-5">
         .
       </div>
+      
 </body>
 
 {% endblock %}

@@ -5,10 +5,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth.views import LogoutView
 from .views import return_form, AddWastageView, AddReturnView, edit_product_view, users_list
+from django.views.generic import RedirectView
 
 urlpatterns = [
     #authentication 
-    path('complete/azuread-tenant-oauth2/home/', views.home ,name="Home"),
+    # path('home/', views.home ,name="Home"),
+    # path('', RedirectView.as_view(url='/complete/azuread-tenant-oauth2/home/')),
     path('logout/', LogoutView.as_view() , name="logout"),
     path('login/', views.new_login, name="login"),
 

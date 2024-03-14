@@ -3,7 +3,10 @@
 {% block base %}
 <div class="container">
     <h1 class="text-center mt-4">𝗜𝗻𝘃𝗲𝗻𝘁𝗼𝗿𝘆 𝗨𝘀𝗲𝗿𝘀 𝗟𝗶𝘀𝘁</h1>
-    <div class="row justify-content-center my-5">
+    <div class="mt-4">
+        {{error_message}}
+    </div>
+    <div class="row justify-content-center mb-5 mt-3">
         <div class="col-md-10">
             <!-- <form name="myForm" onsubmit="return validateEmail()" method="post" id="call">
                 {% csrf_token %}

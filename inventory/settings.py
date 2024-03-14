@@ -154,7 +154,7 @@ SOCIAL_AUTH_PIPELINE = (
 # settings.py
 
 
-LOGIN_REDIRECT_URL="home/"
+LOGIN_REDIRECT_URL="/"
 LOGOUT_REDIRECT_URL="/"
 
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

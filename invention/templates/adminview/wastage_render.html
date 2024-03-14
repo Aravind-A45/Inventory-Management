@@ -24,8 +24,9 @@
 
 <div class="container mt-3">
     <div class="overlay"></div>
-    <h1 class="text-center text-orange mt-5 mb-4">Wastage Form</h1>
-    <div class="container p-4 shadow-sm border border-1 border-dark mb-5 mt-2" id="search">
+    <h1 class="text-orange mt-5 mb-4">Wastage Form</h1>
+    <h6>Damaged Product Price : Rs.{{total}}</h6>
+    <div class="container p-3 shadow-sm border border-1 border-dark mb-5 mt-3" id="search">
         <input type="text" id="rollNumberSearch" class="form-control border border-1 border-dark" placeholder="Enter Roll Number">
       </div>
     <div class="table-responsive">
@@ -35,6 +36,7 @@
                     <th>Roll No</th>
                     <th>Product Name</th>
                     <th>Quantity</th>
+                    <th>Unit Price</th>
                     <th>Reason</th>
                     <th>created_at</th>
     
@@ -48,6 +50,7 @@
                                 <td>{{ i.user.username|slice:"-8:" }}</td>
                                 <td>{{ i.product_name.name }}</td>
                                 <td>{{ i.quantity }}</td>
+                                <td>{{ i.product_name.unit_price }}</td>
                                 <td>{{ i.reason }}</td>
                                 <td>{{ i.created_at }}</td>
                             </tr>
