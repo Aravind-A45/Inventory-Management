@@ -9,8 +9,7 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     #authentication 
-    # path('home/', views.home ,name="Home"),
-    # path('', RedirectView.as_view(url='/complete/azuread-tenant-oauth2/home/')),
+    path('complete/azuread-tenant-oauth2/home/', views.home ,name="Home"),
     path('logout/', LogoutView.as_view() , name="logout"),
     path('login/', views.new_login, name="login"),
 
@@ -67,6 +66,13 @@ urlpatterns = [
     path('return_all/<int:item_id>/', views.return_all, name='return_all'),
     path('add_wastage/<int:item_id>/', AddWastageView.as_view(), name="Add_wastage"),
     path('return/<int:item_id>/', AddReturnView.as_view(), name="return"),
+
+    #Wastage-admin-dashboard
+    path('wastage_admin_dashboard/', views.wastage_admin_dashboard, name='wastage_admin_dashboard'),
+    path('accept_order/<int:wastage_id>/', views.accept_order, name='accept_order'),
+    path('reject_order/<int:wastage_id>/', views.reject_order, name='reject_order'),
+
+    path('excel/', views.excel, name='excel'),
 
 ]
 

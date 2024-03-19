@@ -70,15 +70,11 @@ class Cart(models.Model):
 
 
 class Wastage(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product_name=models.ForeignKey('Product', on_delete=models.CASCADE)
-    quantity=models.PositiveIntegerField()
-    reason=models.TextField()
-    category = models.ForeignKey('Category', on_delete=models.CASCADE)
-    created_at = models.DateTimeField(default=datetime.datetime.now())
+    wastage_user = models.ForeignKey('WastageAdminDashboard', on_delete = models.CASCADE)
+    created_by = models.ForeignKey(User, on_delete = models.CASCADE)
 
     def __str__(self):
-        return str(self.user) 
+        return str(self.created_by) 
 
 
 class PurchasedItem(models.Model):
@@ -116,5 +112,22 @@ class CheckedOutLog(models.Model):
 
 class AdminMail(models.Model):
     mail=models.CharField(max_length=50)
+
+class File(models.Model):
+    file = models.FileField(upload_to='uploads')
+
+
+class WastageAdminDashboard(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    product=models.ForeignKey('Product', on_delete=models.CASCADE)
+    quantity=models.PositiveIntegerField()
+    reason=models.TextField()
+    category = models.ForeignKey('Category', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=datetime.datetime.now())
+    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')])
+
+
+    def __str__(self):
+        return str(self.user) 
 
 

@@ -11,3 +11,9 @@ class NewCategoryForm(forms.ModelForm):
         'placeholder': 'Enter the Category',
       }),
     }
+
+class WastageAdminDashboardForm(forms.ModelForm):
+  class Meta:
+    model = WastageAdminDashboard
+    fields = ('user', 'product', 'quantity', 'reason', 'category', 'created_at', 'status')
+

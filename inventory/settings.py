@@ -222,7 +222,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 SWEETIFY_SWEETALERT_LIBRARY = 'sweetalert2'
 
-CSRF_TRUSTED_ORIGINS = ["http://10.1.75.42",]
+
+
+
+
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:8000',
+]
 
 
 REST_FRAMEWORK = { 

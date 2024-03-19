@@ -32,12 +32,10 @@
             
           <div class="p-4">
             <h1>Upload Excel File</h1>
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <label for="file">Select Excel File:</label>
-                <input type="file" name="file" id="file">
-                <br>
-                <input type="submit" name="form1" value="Upload">
+            <form method="post" action="{% url 'excel' %}" enctype="multipart/form-data">
+              {% csrf_token %}
+              <input type="file" name="file" required>
+              <button type="submit">Submit</button>
             </form>
             <div class="mt-4">
             <h1>View Product</h1>
@@ -48,7 +46,7 @@
         </div>
         <div>
           <div class="col p-4 d-flex flex-column position-static" >
-            <form method="POST" enctype="multipart/form-data" id="productForm">
+            <form method="POST" action="{% url 'Add_product' %}" enctype="multipart/form-data" id="productForm">
                 {% csrf_token%}
                 
                 <center><h1 style="font-style:Serif">PRODUCT FORM</h1></center>
@@ -94,7 +92,7 @@
                     <label for="select" class="form-label">Category</label>
                     <select  class="form-select" id="select" name="category" required> 
                       <option disabled selected>--SELECT--</option>
-                      {% for i in category %}
+                      {% for i in categories %}
                         <option value="{{i.name}}">{{i.name}}</option>
                         {% endfor %}
                     </select>
@@ -103,7 +101,7 @@
                     <label for="select" class="form-label">Sub Category</label>
                     <select  class="form-select" id="select" name="sub_category" required> 
                       <option disabled selected>--SELECT--</option>
-                          {% for i in sub_category  %}
+                          {% for i in sub_categories  %}
                             <option value="{{i.name_sub}}">{{i.name_sub}}</option>
                           {% endfor %}
                     </select>

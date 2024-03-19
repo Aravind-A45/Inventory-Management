@@ -33,6 +33,9 @@ from tablib import Dataset
 import pandas as pd
 from django.core.exceptions import *
 from django.utils.decorators import method_decorator
+from .models import *
+from django.utils import timezone
+from django import template
 
 
 #rest_api
@@ -41,17 +44,25 @@ from rest_framework.response import Response
 # Create your views here.
 
 #bulk import
-from .tasks import import_products_from_excel
+from .tasks import *
 
 
 
 def new_login(request):
     return render(request, 'credential/new_login.html')
 
-def bulk_import(request):
-    file_path = 'D:\\inv1.xlsx'
-    import_products_from_excel.delay(file_path)
-    return HttpResponse('Products import task has been scheduled.')
+def excel(request):
+    print("hii")
+    error_message = None
+    if request.method == 'POST' and request.FILES.get('file'):
+        uploaded_file = request.FILES['file']
+        file_obj = File.objects.create(file=uploaded_file)
+        messages.info(request, "File uploaded")
+        task_result = process_excel_file.delay(file_obj.id)
+        if isinstance(task_result.result, str):
+            error_message = task_result.result
+
+    return render(request, 'adminview/add_product.html', {'error_message': error_message})
 
   
 def form_valid(self, form):
@@ -67,8 +78,6 @@ def restrict_user_pipeline(strategy, details, user=None, is_new=False, *args, **
     for e in email:
         allowed_emails.append(e.mail)
         
-    for i in allowed_emails:
-        print(i)
     if user:
          return ('')
     return {'details': details, 'user': user, 'is_new': is_new}
@@ -90,7 +99,10 @@ def home(request):
         super_admin_group = request.user.groups.filter(name='superadmin').exists()
         name = request.user.username
         user = name[-8:]
-        
+        if not admin_group or not super_admin_group:
+            customer = request.user
+            admin = Group.objects.get(name = 'student_user')
+            customer.groups.add(admin)
         return render(request, 'core/home.html', {'products': products, 'count': count, 'admin_group': admin_group, 'super_admin_group': super_admin_group, 'name': user})
     
     except ObjectDoesNotExist:
@@ -225,8 +237,8 @@ def submit_cart(request):
                         return redirect('view_cart')
                     else:
                         Product.objects.filter(name=cart.product_name).update(available_count=F('available_count') - cart.quantity)
-                        PurchasedItem.objects.create(product=cart.product_name, quantity=cart.quantity, user=request.user, status=status, date_added=datetime.datetime.now(), due_date=due_date)
-                        Log.objects.create(product=cart.product_name, quantity=cart.quantity, user=request.user, status=status, created_at=datetime.datetime.now(), due_date=due_date)
+                        PurchasedItem.objects.create(product=cart.product_name, quantity=cart.quantity, user=request.user, status=status, date_added=timezone.now(), due_date=due_date)
+                        Log.objects.create(product=cart.product_name, quantity=cart.quantity, user=request.user, status=status, created_at=timezone.now(), due_date=due_date)
                 Cart.objects.filter(created_by=request.user).delete()
                 messages.success(request, "Cart submitted successfully.")
         except Product.DoesNotExist:
@@ -318,6 +330,8 @@ class AddReturnView(View):
                 product.available_count += quantity
                 product.save()
 
+                CheckedOutLog.objects.create(product=product, quantity=return_quantity, user=request.user, status="checked_out")
+
                 if item.quantity == 0:
                     item.delete()
                     return redirect('return_form')
@@ -347,7 +361,7 @@ class AddWastageView(View):
         try:
             categories = Category.objects.all()
             products = Log.objects.all()
-            item = get_object_or_404(Log, id=item_id)
+            item = Log.objects.get(id = item_id)
             cart = Cart.objects.filter(created_by=request.user)
             count = cart.count()
             admin_group = request.user.groups.filter(name="admin").exists()
@@ -383,8 +397,7 @@ class AddWastageView(View):
                 damaged_quantity = int(damaged_quantity)
                 item.quantity -= damaged_quantity
                 item.save()
-                Wastage.objects.create(user=request.user, product_name=item.product, quantity=damaged_quantity, reason=reason, category=item.product.category)
-
+                WastageAdminDashboard.objects.create(user = request.user, product = item.product, quantity = damaged_quantity, reason = reason, category = item.product.category, status = 'pending')
                 for product in products:
                     if item.product.name == product.name:
                         damaged_price = damaged_quantity * product.unit_price
@@ -411,7 +424,7 @@ class AddWastageView(View):
 
 @login_required(login_url='login')
 @allowed_user(allowed_roles=['superadmin'])
-def users_list(request):
+def users_list2(request):
     try:
         users = User.objects.all()
         admins = AdminMail.objects.all()
@@ -543,11 +556,11 @@ def admin_view1(request):
         admin_group = request.user.groups.filter(name="admin").exists()
         super_admin_group = request.user.groups.filter(name="superadmin").exists()
 
-        return render(request, 'adminview/admin.html', {'log': log, 'checked_out': checked_out, 'purchased_items': purchased_items, 'count': count, 'admin_group': admin_group, 'super_admin_group': super_admin_group, 'name': user})
+        return render(request, 'adminview/admin1.html', {'log': log, 'checked_out': checked_out, 'purchased_items': purchased_items, 'count': count, 'admin_group': admin_group, 'super_admin_group': super_admin_group, 'name': user})
 
     except ObjectDoesNotExist:
         messages.warning(request, 'An error occurred while processing your request!, Try again Later')
-        return render(request, 'adminview/admin.html', {'error_message': 'Requested object does not exist.'})
+        return render(request, 'adminview/admin1.html', {'error_message': 'Requested object does not exist.'})
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -561,6 +574,7 @@ def admin_view1(request):
 def wastage(request):
     try:
         wastage = Wastage.objects.all()
+        print(wastage)
         cart = Cart.objects.filter(created_by=request.user)
         count = cart.count()
         name = request.user.username
@@ -570,10 +584,10 @@ def wastage(request):
         total = 0
 
         for item in wastage:
-            mul = item.product_name.unit_price * item.quantity
+            mul = item.wastage_user.product.unit_price * item.wastage_user.quantity
             total += mul
 
-        return render(request, 'adminview/wastage_render.html', {'total': total, 'wastage': wastage, 'count': count, 'admin_group': admin_group, 'super_admin_group': super_admin_group, 'name': user})
+        return render(request, 'adminview/wastage_render.html', {'total': total, 'wastages': wastage, 'count': count, 'admin_group': admin_group, 'super_admin_group': super_admin_group, 'name': user})
 
     except ObjectDoesNotExist:
         messages.warning(request, 'An error occurred while processing your request!, Try again Later')
@@ -618,7 +632,7 @@ def add_product(request):
                 ac_price = int(unit_price) * int(actual_count)
 
                 if int(actual_count) >= int(available_count):
-                    Product.objects.create(created_by=request.user, name=product_name, description=description, actual_count=actual_count, available_count=available_count, category=category, image=img, sub_category=sub_category, unit_price=unit_price, actual_price=ac_price, available_price=a_price)
+                    Product.objects.create(created_by=request.user, name=product_name, decription=description, actual_count=actual_count, available_count=available_count, category=category, image=img, sub_category=sub_category, unit_price=unit_price, actual_price=ac_price, available_price=a_price)
                     sweetify.success(request, 'Product added successfully', button="OK")
                     return redirect("Add_product")
                 else:
@@ -635,7 +649,7 @@ def add_product(request):
         print(f"An error occurred: {e}")
         messages.warning(request, 'An error occurred while processing your request!, Try again Later')
         return render(request, 'adminview/add_product.html', {'error_message': 'An error occurred while processing your request.'})    
-
+    
 #View-Product-For-Admin-SuperAdmin
 @allowed_user(allowed_roles=(['admin', 'superadmin']))
 @login_required(login_url='login')
@@ -837,7 +851,6 @@ class edit_product_view(View):
                 product_name=request.POST.get("name")
                 decription=request.POST.get("description") 
                 unit_price = request.POST.get('unit_price')
-                curr_qty = request.POST.get('curr_qty')
                 available_qty = request.POST.get('available_qu')
                 actual_qty = request.POST.get('actual_qu')
                 cat=request.POST.get('cat')
@@ -850,15 +863,14 @@ class edit_product_view(View):
 
                 product.category = category
                 product.sub_category = sub_category
-                c_qty = int(curr_qty)
                 actual_Q = int(actual_qty)
                 product.actual_count = actual_Q
 
                 available_Q = int(available_qty)
                 product.available_count = available_Q
 
-                a_stock = c_qty + product.available_count
-                actual_stock = c_qty + product.actual_count
+                a_stock =  product.available_count
+                actual_stock = product.actual_count
 
                 a_price = float(unit_price) * float(a_stock) 
                 ac_price = float(unit_price) * float(actual_stock)
@@ -890,11 +902,11 @@ def electrical_view(request):
     try:
         admin_group = request.user.groups.filter(name = "admin").exists()
         super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
-        products = Product.objects.all()
         cart=Cart.objects.filter(created_by=request.user)
         count = cart.count()
         name = request.user.username
         user = name[-8:]
+        products = Product.objects.all()
         return render(request, 'core/electrical.html', {'products': products, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group,'name':user})
     
     except ObjectDoesNotExist:
@@ -950,3 +962,109 @@ def electrical_product_view(request):
     except ObjectDoesNotExist:
         messages.warning(request, 'An error Occured during Request Try Later on')
         return render(request, 'adminview/electricalproduct.html')
+    
+@allowed_user(allowed_roles=['admin', 'superadmin', 'wastage_admin'])
+@login_required(login_url='login')
+def wastage_admin_dashboard(request):
+    try:
+        waste_product = WastageAdminDashboard.objects.all()
+        name = request.user.username
+        user = name[-8:]
+        admin_group = request.user.groups.filter(name = "admin").exists()
+        super_admin_group = request.user.groups.filter(name = 'superadmin').exists()
+        cart=Cart.objects.filter(created_by=request.user)
+        count = cart.count()
+        return render(request, 'wastage_admin/dashboard.html', {'products': waste_product, 'count':count,'admin_group': admin_group, 'super_admin_group':super_admin_group, 'name':user})
+
+    except WastageAdminDashboard.DoesNotExist:
+        error_message = "No wastage products found."
+        return render(request, 'adminview/admin.html', {'error_message': error_message})
+
+    except Exception as e:
+        error_message = f"An error occurred: {e}"
+        return render(request, '404.html', {'error_message': error_message})
+
+@allowed_user(allowed_roles=['admin', 'superadmin', 'wastage_admin'])
+@login_required(login_url='login')
+def accept_order(request, wastage_id):
+    try:
+        order = get_object_or_404(WastageAdminDashboard, id=wastage_id)
+        order.status = 'approved'
+        order.save()
+        Wastage.objects.create(created_by=request.user, wastage_user=order)
+        return redirect('wastage_admin_dashboard')
+
+    except WastageAdminDashboard.DoesNotExist:
+        error_message = "The order does not exist."
+        return render(request, 'adminview/admin.html', {'error_message': error_message})
+
+    except Exception as e:
+        error_message = f"An error occurred: {e}"
+        return render(request, '404.html', {'error_message': error_message})
+
+@allowed_user(allowed_roles=['admin', 'superadmin', 'wastage_admin'])
+@login_required(login_url='login')
+def reject_order(request, wastage_id):
+    try:
+        order = get_object_or_404(WastageAdminDashboard, id=wastage_id)
+        order.status = 'rejected'
+        order.delete()
+        return redirect('wastage_admin_dashboard')
+
+    except WastageAdminDashboard.DoesNotExist:
+        error_message = "The order does not exist."
+        return render(request, 'adminview/admin.html', {'error_message': error_message})
+
+    except Exception as e:
+        error_message = f"An error occurred: {e}"
+        return render(request, '404.html', {'error_message': error_message})
+
+@allowed_user(allowed_roles=['admin', 'superadmin'])
+@login_required(login_url='login')
+def users_list(request):
+    try:
+        users = User.objects.all()
+        admin_group = request.user.groups.filter(name="admin").exists()
+        super_admin_group = request.user.groups.filter(name='superadmin').exists()
+        cart=Cart.objects.filter(created_by=request.user)
+        count = cart.count()
+        name = request.user.username
+        user = name[-8:]
+        
+        if request.method == "POST":
+            action = request.POST.get("action")
+            if action == 'approve':
+                application_id = request.POST.get('id')
+                application = User.objects.get(id=application_id)
+                admin_group = Group.objects.get(name='admin')
+                user2 = User.objects.get(email=application.email)
+                student_user_group = Group.objects.get(name='student_user')
+                user2.groups.remove(student_user_group)
+                user2.groups.add(admin_group)
+                AdminMail.objects.create(mail=user2.email)
+                application.save()
+                sweetify.success(request, 'You are successfully added the User as a admin', button="OK") 
+            elif action == 'reject':
+                application_id = request.POST.get('id')
+                application = User.objects.get(id=application_id)
+                user2 = User.objects.get(email=application.email)
+                admin_user_group = Group.objects.get(name='admin')
+                user2.groups.remove(admin_user_group)
+                admin_mail = AdminMail.objects.get(mail=application.email)
+                admin_mail.delete()
+                sweetify.success(request, 'You are successfully removed the User from the admin Role', button="OK")
+            return redirect('users_list')
+        
+        return render(request, 'superadmin_view/users.html', {'users': users, 'admin_group': admin_group, 'super_admin_group': super_admin_group, 'count':count, 'name':user})
+    
+    except User.DoesNotExist:
+        error_message = "The user does not exist."
+        return render(request, 'adminview/admin.html', {'error_message': error_message})
+    
+    except Exception as e:
+        error_message = f"An error occurred: {e}"
+        return render(request, '404.html', {'error_message': error_message})
+
+
+
+    
