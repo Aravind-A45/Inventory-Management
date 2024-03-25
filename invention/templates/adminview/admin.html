@@ -55,10 +55,17 @@
               <a href="{% url 'admin_views' %}" class="text-decoration-none text-black fs-5 fw-bold">Checked In Log</a>
             </div>
           </div>
-        
-    
-    
 
+          <div class="d-flex flex-row bd-highlight mb-3">
+            <div class="p-2 bd-highlight">
+                <button type="button" class="btn btn-outline-info"><a href="{% url 'export_csv' %}" class="text-decoration-none">Export CSV</a></button>
+              </div>
+            <div class="p-2 bd-highlight">
+                <button type="button" class="btn btn-outline-info"><a href="{% url 'export_excel' %}" class="text-decoration-none">Export EXCEL</a></button>
+            </div>
+          </div>
+
+          
         <div class="table-responsive">
             <table id="example" class="table table-striped" style="width:100%">
                 <thead>

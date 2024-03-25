@@ -1,3 +1,5 @@
+import xlwt
+import csv
 import re
 from django.contrib.auth.hashers import make_password
 from django.contrib import messages
@@ -36,6 +38,12 @@ from django.utils.decorators import method_decorator
 from .models import *
 from django.utils import timezone
 from django import template
+from openpyxl import Workbook
+
+# from django.template.loader import render_to_string
+# from weasyprint import HTML
+# import tempfile
+# from django.db.models import Sum
 
 
 #rest_api
@@ -1065,6 +1073,124 @@ def users_list(request):
         error_message = f"An error occurred: {e}"
         return render(request, '404.html', {'error_message': error_message})
 
+#export-csv-for-Log
+@allowed_user(allowed_roles=['admin', 'superadmin'])
+@login_required(login_url='login')
+def export_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename = UsersLogDetails'+str(datetime.now())+'.csv'
+
+    writer = csv.writer(response)
+    writer.writerow(['Roll Number', 'Product Name', 'category', 'Sub Category', 'Quantity', 'Date'])
+
+    products = PurchasedItem.objects.all()
+
+    for product in products:
+        writer.writerow([product.user.username, product.product.name, product.product.category.name, product.product.sub_category.name_sub, product.quantity, product.date_added])
+
+    return response
+
+#export-excel-for-Log
+@allowed_user(allowed_roles=['admin', 'superadmin'])
+@login_required(login_url='login')
+def export_excel(request):
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=UsersLogDetails' + str(datetime.now()) + '.xlsx'
+    workbook = Workbook()
+    worksheet = workbook.active
+
+    headers = ['Roll Number', 'Product Name', 'Category', 'Sub Category', 'Quantity', 'Date']
+    worksheet.append(headers)
+
+    products = PurchasedItem.objects.all()
+    for product in products:
+        date_added = product.date_added.replace(tzinfo=None) if product.date_added else None
+        row = [product.user.username, product.product.name, product.product.category.name, product.product.sub_category.name_sub, product.quantity, date_added]
+        worksheet.append(row)
+    workbook.save(response)
+    return response
+
+@allowed_user(allowed_roles=['admin', 'superadmin'])
+@login_required(login_url='login')
+def export_csv_product(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename = ProductList'+str(datetime.now())+'.csv'
+
+    writer = csv.writer(response)
+    writer.writerow(['Product Name', 'category', 'Sub Category', 'Unit Price', 'Actual Quantity', 'Available Qunatity','Actual Price', 'Available Price'])
+
+    products = Product.objects.all()
+
+    for product in products:
+        writer.writerow([product.name, product.category.name, product.sub_category.name_sub, product.unit_price, product.actual_count, product.available_count,product.actual_price, product.available_price])
+
+    return response
+
+
+@allowed_user(allowed_roles=['admin', 'superadmin'])
+@login_required(login_url='login')
+def export_excel_product(request):
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=ProductDetails' + str(datetime.now()) + '.xlsx'
+
+    workbook = Workbook()
+    worksheet = workbook.active
+
+    headers = ['Product Name', 'category', 'Sub Category', 'Unit Price', 'Actual Quantity', 'Available Qunatity','Actual Price', 'Available Price']
+    worksheet.append(headers)
+    products = Product.objects.all()
+
+    for product in products:
+        row =[product.name, product.category.name, product.sub_category.name_sub, product.unit_price, product.actual_count, product.available_count,product.actual_price, product.available_price]
+        worksheet.append(row)
+    workbook.save(response)
+    return response
+
+
+@allowed_user(allowed_roles=['admin', 'superadmin'])
+@login_required(login_url='login')
+def export_csv_damaged_product(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename = DamagedProductsList'+str(datetime.now())+'.csv'
+
+    writer = csv.writer(response)
+    writer.writerow(['Roll Number','Product Name', 'category', 'Sub Category', 'Unit Price', 'Quantity', 'Reason', 'Verified By'])
+
+    wastages = Wastage.objects.all()
+    
+    for product in wastages:
+        name = product.wastage_user.user.username
+        verified_name = product.created_by.username
+        writer.writerow([name[-8:], product.wastage_user.product.name,product.wastage_user.product.category.name, product.wastage_user.product.sub_category.name_sub, product.wastage_user.product.unit_price, product.wastage_user.quantity,product.wastage_user.reason, verified_name[-8:]])
+
+    return response
+
+
+@allowed_user(allowed_roles=['admin', 'superadmin'])
+@login_required(login_url='login')
+def export_excel_damaged_product(request):
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=DamagedProductDetails' + str(datetime.now()) + '.xlsx'
+
+    workbook = Workbook()
+    worksheet = workbook.active
+
+    headers = ['Roll Number', 'Product Name', 'category', 'Sub Category', 'Unit Price', 'Quantity', 'Reason', 'Verified By']
+    worksheet.append(headers)
+    wastages = Wastage.objects.all()
+
+    for product in wastages:
+        name = product.wastage_user.user.username
+        verified_name = product.created_by.username
+        row =[name[-8:],product.wastage_user.product.name,product.wastage_user.product.category.name, product.wastage_user.product.sub_category.name_sub, product.wastage_user.product.unit_price, product.wastage_user.quantity, product.wastage_user.reason, verified_name[-8:]]
+        worksheet.append(row)
+    workbook.save(response)
+    return response
+
 
 
     
+    
+
+
+

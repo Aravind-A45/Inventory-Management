@@ -19,7 +19,8 @@
                 </thead>
                 <tbody>
                     {% for user in users reversed %}
-                    {% if user.username != 'admin' %}
+                    {% if user.username != 'admin' and user.groups.name != 'wastage_admin' %}
+                    
                     <tr>
                         <td>{{ user.username|slice:"-8:" }}</td>
                         <td>{{ user.email}}</td>

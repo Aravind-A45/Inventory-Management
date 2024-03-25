@@ -32,6 +32,10 @@ urlpatterns = [
     path('product/', views.view_product, name="product"),
     path('remove_product/<int:pk>/', views.remove_product, name="delete_product"),
     path('edit_product_view/<int:product_id>/', edit_product_view.as_view() , name="edit_product_view"),
+    path('export_csv_product/', views.export_csv_product, name='export_csv_product'),
+    path('export_excel_product/', views.export_excel_product, name='export_excel_product'),
+    path('export_csv_damaged_product/', views.export_csv_damaged_product, name='export_csv_damaged_product'),
+    path('export_excel_damaged_product/', views.export_excel_damaged_product, name='export_excel_damaged_product'),
  
 
     #Category
@@ -73,6 +77,10 @@ urlpatterns = [
     path('reject_order/<int:wastage_id>/', views.reject_order, name='reject_order'),
 
     path('excel/', views.excel, name='excel'),
+
+    path('export_csv/', views.export_csv, name='export_csv'),
+    path('export_excel/', views.export_excel, name='export_excel'),
+
 
 ]
 
