@@ -11,6 +11,13 @@ import pandas as pd
 from django.core.exceptions import ObjectDoesNotExist
 import logging
 from django.contrib.auth.models import User
+from django.contrib import messages
+from openpyxl import load_workbook
+from django.core.files.base import ContentFile
+import base64
+from io import BytesIO
+from PIL import Image as PILImage
+import imghdr
 
 @shared_task(bind=True)
 def send_notification_mail(self):
@@ -103,6 +110,7 @@ def send_stock_mail(self):
         print(f"An error occurred: {e}")
         return False
 
+
 @shared_task
 def process_excel_file(id):
     try:
@@ -114,21 +122,39 @@ def process_excel_file(id):
             sub_category, _ = SubCategory.objects.get_or_create(name_sub=row['Sub_category'])
             created_by, _ = User.objects.get_or_create(username=row['Created_by'])
 
-            if Product.objects.filter(name=row['Name']).exists():
-                return f"Product already exists: {row['Name']}"
+            product_name = row['Name']
+            actual_count = row['Actual_count']
+            available_count = row['Available_count']
+            unit_price = row['Unit_price']
 
-            Product.objects.update_or_create(
-                name=row['Name'],
-                decription=row['Description'],
-                actual_count=row['Actual_count'],
-                available_count=row['Available_count'],
-                category=category,
-                sub_category=sub_category,
-                unit_price=row['Unit_price'],
-                actual_price=row['Actual_count'] * row['Unit_price'],
-                available_price=row['Available_count'] * row['Unit_price'],
-                created_by=created_by
-            )
+            existing_product = Product.objects.filter(name=product_name).first()
+
+            if existing_product:
+                existing_product.actual_count += actual_count
+                existing_product.available_count += available_count
+                existing_product.actual_price = existing_product.actual_count * unit_price
+                existing_product.available_price = existing_product.available_count * unit_price
+                existing_product.save()
+            else:
+                Product.objects.create(
+                    name=product_name,
+                    decription=row['Decription'],
+                    actual_count=actual_count,
+                    available_count=available_count,
+                    category=category,
+                    sub_category=sub_category,
+                    unit_price=unit_price,
+                    actual_price=actual_count * unit_price,
+                    available_price=available_count * unit_price,
+                    created_by=created_by
+                )
+
         return "Success"
     except Exception as e:
         return f"An error occurred: {e}"
+
+
+
+
+
+

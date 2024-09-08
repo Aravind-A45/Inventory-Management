@@ -48,7 +48,6 @@ def excel(request):
     if request.method == 'POST' and request.FILES.get('file'):
         uploaded_file = request.FILES['file']
         file_obj = File.objects.create(file=uploaded_file)
-        messages.info(request, "Uploaded successfully")
 
         task_result = process_excel_file.delay(file_obj.id)
         if isinstance(task_result.result, str):
@@ -67,7 +66,7 @@ def form_valid(self, form):
 #Microsoft-Authentication-View-Only-For-Admin
 def restrict_user_pipeline(strategy, details, user=None, is_new=False, *args, **kwargs):
     email=AdminMail.objects.all()
-    allowed_emails = ['nagulesh.22cs@kct.ac.in']
+    allowed_emails = []
     for e in email:
         allowed_emails.append(e.mail)
         
